@@ -5,14 +5,8 @@
 
 const int WIDTH=10;
 
-/*typedef enum Stone{
-    NONE, BLACK, WHITE
-} Stone;*/
-
-// 盤面の上下左右に番兵
 Stone board[100]={NONE};
 
-// 上から時計回り
 int directions[]={
     -10,-9,1,11,10,9,-1,-11
 };
@@ -66,30 +60,58 @@ int search_8dir(int x,int y,Stone stone,bool flip)
     return count;
 }
 
+/*int search_dir(int x,int y,int dir,Stone stone,bool flip)
+{
+    Stone next=board[y*WIDTH+x+dir];
+
+    int count=0;
+
+    switch(next){
+        case NONE:
+            return 0;
+            break;
+        default:
+            if(next==stone){
+                return 1;
+            }else{
+                count+=search_dir(x,y,dir+dir,stone,flip);
+
+                if(count&&flip){
+                    board[y*WIDTH+x+dir]=stone;
+                }
+            }
+            break;
+    }
+
+    return count;
+}*/
+
 int search_dir(int x,int y,int dir,Stone stone,bool flip)
 {
     int indices[8]={0};
     int count=0;
+    int nest=1;
 
     while(1){
-        Stone next=board[y*WIDTH+x+dir];
+        int next_index=y*WIDTH+x+dir*nest;
+        Stone next=board[next_index];
 
-        if(next==stone){
-            break;
-        }
-        else if(next==NONE){
+        if(next==NONE){
             count=0;
             break;
-        }
-        else{
-            indices[count]=y*WIDTH+x+dir;
-            count++;
-            dir+=dir;
+        }else{
+            if(next==stone){
+                break;
+            }else{
+                indices[count]=next_index;
+                count++;
+                nest++;
+            }
         }
     }
 
     if((count>0)&&flip){
-        for(int i=0;i<8;i++){
+        for(int i=0;i<count;i++){
             board[indices[i]]=stone;
         }
     }
@@ -97,9 +119,24 @@ int search_dir(int x,int y,int dir,Stone stone,bool flip)
     return count;
 }
 
-void put_stone(int x,int y,Stone stone)
+bool put_stone(int x,int y,Stone stone)
 {
-    board[y*WIDTH+x]=stone;
+    int count=0;
+
+    if(!in_area(x,y)||!is_blank(x,y)){
+        return false;
+    }
+
+    count=search_8dir(x,y,stone,true);
+
+    printf("cnt:%d\n",count);
+
+    if(count){
+        board[y*WIDTH+x]=stone;
+        return true;
+    }
+
+    return false;
 }
 
 int count_stones(Stone stone)

@@ -4,53 +4,56 @@
 
 #include "board.h"
 
-bool continues(Stone);
-void put(Stone);
+void do_turn(Stone);
 void parse_command(int*,int*);
 
 int main()
 {
     Stone players[]={WHITE,BLACK};
     int turn=1;
+    int count=0,prev_count=0;
 
     init();
-
     draw_board();
 
-    while(continues(players[turn%2])){
-        put(players[turn%2]);
+    while(1){
         printf("turn:%d\n",turn);
+        count=search_all(players[turn%2]);
+        if(count==0){
+            if(prev_count==0){
+                printf("finished\n");
+                break;
+            }
+            printf("pass\n");
+            turn++;
+            prev_count=count;
+            continue;
+        }
+        do_turn(players[turn%2]);
         draw_board();
         turn++;
+    }
+
+    int count_blacks=count_stones(BLACK);
+    int count_whites=count_stones(WHITE);
+    if(count_blacks>count_whites){
+        printf("Black Wins\n");
+    }else if(count_blacks<count_whites){
+        printf("White Wins\n");
+    }else{
+        printf("Draw\n");
     }
 
     return 0;
 }
 
-bool continues(Stone stone)
+void do_turn(Stone stone)
 {
-    if(search_all(stone)==0){
-        return false;
-    }
-
-    return true;
-}
-
-void put(Stone stone)
-{
-    int x,y,count;
-
+    int x,y;
     do{
+        printf("player %d ",stone);
         parse_command(&x,&y);
-
-        if(!in_area(x,y)||!is_blank(x,y)){
-            printf("You can't put a stone here.\n");
-        }
-
-        count=search_8dir(x,y,stone,true);
-    }while(count==0);
-
-    put_stone(x,y,stone);
+    }while(!put_stone(x,y,stone));
 }
 
 void parse_command(int* x,int* y)

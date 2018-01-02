@@ -16,7 +16,7 @@ int search_all(Stone);
 int search_8dir(int,int,Stone,bool);
 int search_dir(int,int,int,Stone,bool);
 
-void put_stone(int,int,Stone);
+bool put_stone(int,int,Stone);
 
 int count_stones(Stone);
 
