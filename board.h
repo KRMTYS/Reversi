@@ -12,7 +12,7 @@ void init();
 bool in_area(int,int);
 bool is_blank(int,int);
 
-int search_all(Stone);
+int search_residue(Stone);
 int search_8dir(int,int,Stone,bool);
 int search_dir(int,int,int,Stone,bool);
 

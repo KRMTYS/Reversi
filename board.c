@@ -36,13 +36,15 @@ bool is_blank(int x,int y)
     return false;
 }
 
-int search_all(Stone stone)
+int search_residue(Stone stone)
 {
     int count=0;
 
     for(int y=1;y<=8;y++){
         for(int x=1;x<=8;x++){
-            count+=search_8dir(x,y,stone,false);
+            if(board[y*WIDTH+x]==NONE){
+                count+=search_8dir(x,y,stone,false);
+            }
         }
     }
 
@@ -59,32 +61,6 @@ int search_8dir(int x,int y,Stone stone,bool flip)
 
     return count;
 }
-
-/*int search_dir(int x,int y,int dir,Stone stone,bool flip)
-{
-    Stone next=board[y*WIDTH+x+dir];
-
-    int count=0;
-
-    switch(next){
-        case NONE:
-            return 0;
-            break;
-        default:
-            if(next==stone){
-                return 1;
-            }else{
-                count+=search_dir(x,y,dir+dir,stone,flip);
-
-                if(count&&flip){
-                    board[y*WIDTH+x+dir]=stone;
-                }
-            }
-            break;
-    }
-
-    return count;
-}*/
 
 int search_dir(int x,int y,int dir,Stone stone,bool flip)
 {
@@ -129,8 +105,6 @@ bool put_stone(int x,int y,Stone stone)
 
     count=search_8dir(x,y,stone,true);
 
-    printf("cnt:%d\n",count);
-
     if(count){
         board[y*WIDTH+x]=stone;
         return true;
@@ -152,20 +126,20 @@ int count_stones(Stone stone)
 
 void draw_board()
 {
-    printf(" ABCDEFGH\n");
+    printf("  A B C D E F G H \n");
 
     for(int y=1;y<=8;y++){
-        printf("%d",y);
+        printf("%d ",y);
         for(int x=1;x<=8;x++){
             switch(board[y*WIDTH+x]){
                 case WHITE:
-                    printf("W");
+                    printf("W ");
                 break;
                 case BLACK:
-                    printf("B");
+                    printf("B ");
                 break;
                 default:
-                    printf("-");
+                    printf("- ");
                 break;
             }
         }
