@@ -1,113 +1,94 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <ctype.h>
 
 #include "board.h"
 
-Stone player[] = {
-    WHITE, BLACK};
-int turn;
-
-bool is_finished(int*);
-void do_turn(Stone);
-void parse_command(int *, int *);
-void decide_winner();
+bool play_turn(int,int*);
+void parse_input(int *, int *);
+void judge();
 
 int main()
 {
-    int count = 0;
     int prev_count = 1;
-
-    turn = 1;
+    int turn = 1;
 
     init();
-    draw_board();
 
-    while (1)
+    while (play_turn(turn, &prev_count))
     {
-        count = search_all(player[turn % 2]);
-        if (count == 0)
-        {
-            if (prev_count == 0)
-            {
-                printf("finished\n");
-                break;
-            }
-            printf("pass\n");
-            prev_count = count;
-            continue;
-        }
-
-        do_turn(player[turn % 2]);
-        draw_board();
+        print_board();
         turn++;
     }
 
-    decide_winner();
+    judge();
 
     return 0;
 }
 
-bool is_finished(int* prev_count)
+bool play_turn(int turn,int* prev_count)
 {
-    int count = search_all(player[turn % 2]);
+    Disk disk = (turn % 2 == 1) ? BLACK : WHITE;
+
+    int count = count_all_disks(disk);
+
     if (count == 0)
     {
-        if (*prev_count == 0)
+        // finish a game if both of players couldn't put disk
+        if (count == *prev_count)
         {
-            printf("finished\n");
-            return true;
+            return false;
         }
         else
         {
             printf("pass\n");
-            *prev_count = count;
         }
     }
 
-    return false;
-}
-
-void do_turn(Stone stone)
-{
-    char *str_turn = (stone == BLACK) ? "Black" : "White";
+    *prev_count = count;
 
     int x, y;
 
-    while (1)
+    // put disk if a player could
+    while (count > 0)
     {
-        printf("[%d] %s: ", turn, str_turn);
-        parse_command(&x, &y);
+        printf("[%d] %s: ", turn, (turn % 2 == 1) ? "Black" : "White");
+        parse_input(&x, &y);
 
         if (in_board(x, y) || is_none(x, y))
         {
-            if (put_stone(x, y, stone))
-            {
+            if (put_disk(x, y, disk))
                 break;
-            }
         }
     }
+
+    printf("\n");
+
+    return true;
 }
 
-void parse_command(int *x, int *y)
+// parse input
+void parse_input(int *x, int *y)
 {
-    char command[4];
-    fgets(command, 4, stdin);
+    char input[4];
+    fgets(input, 4, stdin);
 
-    if (!isalpha(command[0]) && !isdigit(command[1]))
+    if (!isalpha(input[0]) && !isdigit(input[1]))
         return;
 
-    *x = toupper(command[0]) - '@';
-    *y = command[1] - '0';
+    *x = toupper(input[0]) - '@';
+    *y = input[1] - '0';
 }
 
-void decide_winner()
+// count disks and judge
+void judge()
 {
-    int num_black = count_stones(BLACK);
-    int num_white = count_stones(WHITE);
+    int num_black = count_disks(BLACK);
+    int num_white = count_disks(WHITE);
 
-    printf("***\n");
-    printf("B : W = %d : %d\n", num_black, num_white);
+    printf("\n\n*********\n");
+    printf("Black: %2d\n", num_black);
+    printf("White: %2d\n", num_white);
+    printf("*********\n");
 
     if (num_black > num_white)
     {

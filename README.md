@@ -4,6 +4,8 @@
 
 A reversi game for console
 
+![screenshot](./screenshot.png)
+
 ## Environment
 
 - Windows 10 64bit

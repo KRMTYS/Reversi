@@ -3,25 +3,25 @@
 
 #include <stdbool.h>
 
-typedef enum Stone {
+typedef enum Disk {
     NONE,
     BLACK,
     WHITE
-} Stone;
+} Disk;
 
 void init();
 
 bool in_board(int, int);
 bool is_none(int, int);
 
-int search_all(Stone);
-int search_8dir(int, int, Stone, bool);
-int search_dir(int, int, int, Stone, bool);
+int count_all_disks(Disk);
+int count_around_disks(int, int, Disk, bool);
+int count_straight_disks(int, int, int, Disk, bool);
 
-int put_stone(int, int, Stone);
+int put_disk(int, int, Disk);
 
-int count_stones(Stone);
+int count_disks(Disk);
 
-void draw_board();
+void print_board();
 
 #endif
