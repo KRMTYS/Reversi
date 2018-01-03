@@ -4,36 +4,41 @@
 
 #include "board.h"
 
-bool is_finished(Stone);
+Stone player[] = {
+    WHITE, BLACK};
+int turn;
+
+bool is_finished(int*);
 void do_turn(Stone);
-void parse_command(int*,int*);
+void parse_command(int *, int *);
 void decide_winner();
 
 int main()
 {
-    Stone players[]={WHITE,BLACK};
-    int turn=1;
-    int count=0,prev_count=1;
+    int count = 0;
+    int prev_count = 1;
+
+    turn = 1;
 
     init();
     draw_board();
 
-    while(1){
-        printf("[%d] ",turn);
-
-        count=search_residue(players[turn%2]);
-        if(count==0){
-            if(prev_count==0){
+    while (1)
+    {
+        count = search_all(player[turn % 2]);
+        if (count == 0)
+        {
+            if (prev_count == 0)
+            {
                 printf("finished\n");
                 break;
             }
             printf("pass\n");
-            turn++;
-            prev_count=count;
+            prev_count = count;
             continue;
         }
 
-        do_turn(players[turn%2]);
+        do_turn(player[turn % 2]);
         draw_board();
         turn++;
     }
@@ -43,45 +48,77 @@ int main()
     return 0;
 }
 
-void do_turn(Stone stone)
+bool is_finished(int* prev_count)
 {
-    char* player;
-    if(stone==BLACK){
-        player="Black";
-    }
-    else{
-        player="White";
+    int count = search_all(player[turn % 2]);
+    if (count == 0)
+    {
+        if (*prev_count == 0)
+        {
+            printf("finished\n");
+            return true;
+        }
+        else
+        {
+            printf("pass\n");
+            *prev_count = count;
+        }
     }
 
-    int x,y;
-    do{
-        printf("%s: ",player);
-        parse_command(&x,&y);
-    }while(!put_stone(x,y,stone));
+    return false;
 }
 
-void parse_command(int* x,int* y)
+void do_turn(Stone stone)
+{
+    char *str_turn = (stone == BLACK) ? "Black" : "White";
+
+    int x, y;
+
+    while (1)
+    {
+        printf("[%d] %s: ", turn, str_turn);
+        parse_command(&x, &y);
+
+        if (in_board(x, y) || is_none(x, y))
+        {
+            if (put_stone(x, y, stone))
+            {
+                break;
+            }
+        }
+    }
+}
+
+void parse_command(int *x, int *y)
 {
     char command[4];
-    fgets(command,sizeof(command),stdin);
+    fgets(command, 4, stdin);
 
-    *x=toupper(command[0])-'A'+1;
-    *y=command[1]-'0';
+    if (!isalpha(command[0]) && !isdigit(command[1]))
+        return;
+
+    *x = toupper(command[0]) - '@';
+    *y = command[1] - '0';
 }
 
 void decide_winner()
 {
-    int blacks=count_stones(BLACK);
-    int whites=count_stones(WHITE);
+    int num_black = count_stones(BLACK);
+    int num_white = count_stones(WHITE);
 
     printf("***\n");
-    printf("B : W = %d : %d\n",blacks,whites);
+    printf("B : W = %d : %d\n", num_black, num_white);
 
-    if(blacks>whites){
+    if (num_black > num_white)
+    {
         printf("* Black Wins *\n");
-    }else if(blacks<whites){
+    }
+    else if (num_black < num_white)
+    {
         printf("* White Wins *\n");
-    }else{
+    }
+    else
+    {
         printf("* Draw *\n");
     }
 }
