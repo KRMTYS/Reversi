@@ -1,5 +1,7 @@
 CC = gcc
 
+CFLAGS = -std=c99
+
 TARGET = reversi
 
 OBJS = \
@@ -16,14 +18,14 @@ endif
 all: clean target
 
 target: $(OBJS)
-	$(CC) -o $(TARGET)$(EXT) $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET)$(EXT) $(OBJS)
 	-$(RM) $(OBJS)
 
 main.o: main.c
-	$(CC) -c main.c
+	$(CC) $(CFLAGS) -c main.c
 
 board.o: board.c
-	$(CC) -c board.c
+	$(CC) $(CFLAGS) -c board.c
 
 .PHONY: clean
 clean:

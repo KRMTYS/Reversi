@@ -1,29 +1,41 @@
 # Reversi
 
-## Description
+## Overview
 
 A reversi game for 2 players
 
 ![screenshot](./screenshot.png)
 
+## Description
+
 - Disks are indicated by characters `@` (Black) and `O` (White)
-- Coordinate: a row character (`a` to `h`) and a column number (`1` to `8`)
-    - `a1` (upper left), `b2`, ..., `h8` (lower right)
-- A player can put him disk in turn by input coordinate
+- Coordinate: row character (`a` to `h`) + column number (`1` to `8`)
+- A player can put the disk in turn by input coordinate
 
 ## Testing Environment
 
-- Windows10 64bit
-- gcc version 6.3.0
-- GNU Make 3.82.90
-    - MinGW (Minimalist GNU for Windows)
+- Windows10 64bit + MinGW
+    - gcc version 6.3.0
+    - GNU Make 3.82.90
+
+- Windows Subsystem for Linux: Ubuntu 14.04.5 LTS
+    - gcc version 4.8.4
+    - GNU Make 3.81
 
 ## Build and Run
 
-Windows
+Windows + MinGW
 ```
+$ cd ./src
 $ mingw32-make
 $ ./reversi.exe
+```
+
+Linux
+```
+$ cd ./src
+$ make
+$ ./reversi
 ```
 
 ## License
