@@ -29,4 +29,4 @@ board.o: board.c
 
 .PHONY: clean
 clean:
-	-$(RM) $(TARGET) $(OBJS)
+	-$(RM) $(TARGET)$(EXT) $(OBJS)
