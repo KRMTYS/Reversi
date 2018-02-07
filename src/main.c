@@ -5,9 +5,9 @@
 
 #include "board.h"
 
-bool play_turn(int,int*);
-void player_input(int*, int*);
-void program_input(int*, int*);
+bool play_turn(int, int*);
+void player_input(int);
+void program_input(int);
 void judge();
 
 int main()
@@ -17,8 +17,8 @@ int main()
 
     srand((unsigned)time(NULL));
 
-    init();
     printf("You are Black\n");
+    init();
 
     while (play_turn(turn, &prev_count))
     {
@@ -40,58 +40,60 @@ bool play_turn(int turn,int* prev_count)
     if (count == 0)
     {
         // finish a game if both of players couldn't put disk
-        if (count == *prev_count)
-        {
-            return false;
-        }
-        else
-        {
-            printf("pass\n");
-        }
+        if (count == *prev_count) return false;
+        else printf("pass\n");
+    }
+    else
+    {
+       if (turn % 2 == 1) player_input(turn);
+       else  program_input(turn);
     }
 
     *prev_count = count;
-
-    int x, y;
-
-    // put disk if a player could
-    while (count > 0)
-    {
-        printf("[%d] %s: ", turn, (turn % 2 == 1) ? "Black" : "White");
-
-        //player_input(&x, &y);
-        program_input(&x, &y);
-
-        if (in_board(x, y) || is_none(x, y))
-        {
-            if (put_disk(x, y, disk))
-                break;
-        }
-    }
 
     printf("\n");
 
     return true;
 }
 
-void player_input(int* x, int* y)
+void player_input(int turn)
 {
+    int x, y;
     char input[4];
-    fgets(input, 4, stdin);
 
-    if (!isalpha(input[0]) || !isdigit(input[1]))
-        return;
-
-    *x = toupper(input[0]) - '@';
-    *y = input[1] - '0';
+    do
+    {
+        do
+        {
+            printf("[%d] Black: ", turn);
+            fgets(input, 4, stdin);
+            
+            x = toupper(input[0]) - '@';
+            y = input[1] - '0';
+        }
+        while (!in_board(x, y) || !is_none(x, y));
+    }
+    while (put_disk(x, y, BLACK) == 0);
 }
 
-void program_input(int* x, int* y)
+void program_input(int turn)
 {
-    *x = rand() % 8 + 1;
-    *y = rand() % 8 + 1;
+    printf("[%d] White: ", turn);
 
-    printf("%c%c\n", *x + '@', *y + '0');
+    int x, y;
+
+    do
+    {
+        do
+        {
+            x = rand() % 8 + 1;
+            y = rand() % 8 + 1;
+        }
+        while (!in_board(x, y) || !is_none(x, y));
+    }
+    while (put_disk(x, y, WHITE) == 0);
+
+    printf("%c%c\n", x + '@', y + '0');
 }
 
 // count disks and judge
@@ -107,11 +109,11 @@ void judge()
 
     if (num_black > num_white)
     {
-        printf("* Black Wins *\n");
+        printf("* You Win *\n");
     }
     else if (num_black < num_white)
     {
-        printf("* White Wins *\n");
+        printf("* You Lose *\n");
     }
     else
     {

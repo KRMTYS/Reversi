@@ -87,10 +87,7 @@ int count_straight_disks(int x, int y, int dir, Disk disk, bool flip)
         }
         else
         {
-            if (next == disk)
-            {
-                break;
-            }
+            if (next == disk) break;
             else
             {
                 indices[count] = next_index;
@@ -116,8 +113,7 @@ int put_disk(int x, int y, Disk disk)
 {
     int count = count_around_disks(x, y, disk, true);
 
-    if (count)
-        board[y * 10 + x] = disk;
+    if (count) board[y * 10 + x] = disk;
 
     return count;
 }
@@ -128,8 +124,7 @@ int count_disks(Disk disk)
 
     for (int i = 0; i < 100; i++)
     {
-        if (board[i] == disk)
-            count++;
+        if (board[i] == disk) count++;
     }
 
     return count;
