@@ -2,22 +2,25 @@
 
 #include "board.h"
 
+// 盤面
+// 8x8マス+周囲の番兵
 Disk board[100] = {};
 
+// 周囲8方向への配列インデックス差分値
 int directions[] = {
-    -10, // upper
-    -9,  // upper right
-    1,   // right
-    11,  // lower right
-    10,  // lower
-    9,   // lower left
-    -1,  // left
-    -11  // upper left
+    -10, // 上
+    -9,  // 右上
+    1,   // 右
+    11,  // 右下
+    10,  // 下
+    9,   // 左下
+    -1,  // 左
+    -11  // 左上
 };
 
 void init()
 {
-    // starting position
+    // 石の初期配置
     board[44] = WHITE;
     board[45] = BLACK;
     board[54] = BLACK;
@@ -36,7 +39,6 @@ bool is_none(int x, int y)
     return (board[y * 10 + x] == NONE) ? true : false;
 }
 
-// count all disks
 int count_all_disks(Disk disk)
 {
     int count = 0;
@@ -55,7 +57,6 @@ int count_all_disks(Disk disk)
     return count;
 }
 
-// count disks for around 8 directions 
 int count_around_disks(int x, int y, Disk disk, bool flip)
 {
     int count = 0;
@@ -68,9 +69,9 @@ int count_around_disks(int x, int y, Disk disk, bool flip)
     return count;
 }
 
-// count disks for one direction
 int count_straight_disks(int x, int y, int dir, Disk disk, bool flip)
 {
+    // 返せる石の座標
     int indices[8] = {0};
     int count = 0;
     int nest = 1;
@@ -97,7 +98,7 @@ int count_straight_disks(int x, int y, int dir, Disk disk, bool flip)
         }
     }
 
-    // flip disks
+    // 石を返す
     if ((count > 0) && flip)
     {
         for (int i = 0; i < count; i++)

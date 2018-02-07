@@ -12,11 +12,14 @@ void judge();
 
 int main()
 {
-    int prev_count = 1;
+    // 前ターンで置ける石数
+    int prev_count = 0;
+    // ターン数
     int turn = 1;
 
     srand((unsigned)time(NULL));
 
+    // プレイヤーは先攻黒番
     printf("You are Black\n");
     init();
 
@@ -31,22 +34,25 @@ int main()
     return 0;
 }
 
+// ターン行動
 bool play_turn(int turn,int* prev_count)
 {
     Disk disk = (turn % 2 == 1) ? BLACK : WHITE;
 
     int count = count_all_disks(disk);
 
+    // 返せる石がない
     if (count == 0)
     {
-        // finish a game if both of players couldn't put disk
-        if (count == *prev_count) return false;
+        // 両者返せなくなったときゲーム終了
+        if (*prev_count == 0) return false;
         else printf("pass\n");
     }
     else
     {
-       if (turn % 2 == 1) player_input(turn);
-       else  program_input(turn);
+        // 座標入力
+        if (turn % 2 == 1) player_input(turn);
+        else  program_input(turn);
     }
 
     *prev_count = count;
@@ -56,10 +62,11 @@ bool play_turn(int turn,int* prev_count)
     return true;
 }
 
+// プレイヤー側入力
 void player_input(int turn)
 {
-    int x, y;
     char input[4];
+    int x, y;
 
     do
     {
@@ -67,15 +74,19 @@ void player_input(int turn)
         {
             printf("[%d] Black: ", turn);
             fgets(input, 4, stdin);
-            
-            x = toupper(input[0]) - '@';
+
+            // 入力した文字型変数を1~8の整数値に変換する
+            x = tolower(input[0]) - '`';
             y = input[1] - '0';
         }
+        // 石を置けるか
         while (!in_board(x, y) || !is_none(x, y));
     }
+    // 石を返せるか
     while (put_disk(x, y, BLACK) == 0);
 }
 
+// プログラム側入力
 void program_input(int turn)
 {
     printf("[%d] White: ", turn);
@@ -89,14 +100,17 @@ void program_input(int turn)
             x = rand() % 8 + 1;
             y = rand() % 8 + 1;
         }
+        // 石を置けるか
         while (!in_board(x, y) || !is_none(x, y));
     }
+    // 石を返せるか
     while (put_disk(x, y, WHITE) == 0);
 
-    printf("%c%c\n", x + '@', y + '0');
+    // プレイヤーと同様に入力座標を表示
+    printf("%c%c\n", x + '`', y + '0');
 }
 
-// count disks and judge
+// 石の集計
 void judge()
 {
     int num_black = count_disks(BLACK);

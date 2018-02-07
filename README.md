@@ -1,18 +1,24 @@
 # Reversi
 
-## Overview
+## 概要
 
-A reversi game for 2 players
+1P用リバーシゲーム
 
 ![screenshot](./screenshot.png)
 
-## Description
+## 詳細
 
-- Disks are indicated by characters `@` (Black) and `O` (White)
-- Coordinate: row character (`a` to `h`) + column number (`1` to `8`)
-- A player can put the disk in turn by input coordinate
+- コンソール上に盤面が表示される
+    - 黒石：`@` 白石：`O`
+- プレイヤーは先攻、黒石で固定
+- 石を置く座標は
+    `列アルファベット[a~h]+行番号[1~8]`
+    と指定して入力できる
+    ```
+    [1] Black: d3
+    ```
 
-## Testing Environment
+## 開発･テスト環境
 
 - Windows10 64bit + MinGW
     - gcc version 6.3.0
@@ -22,27 +28,11 @@ A reversi game for 2 players
     - gcc version 4.8.4
     - GNU Make 3.81
 
-## Build and Run
-
-Windows + MinGW
-```
-$ cd ./src
-$ mingw32-make
-$ ./reversi.exe
-```
-
-Linux
-```
-$ cd ./src
-$ make
-$ ./reversi
-```
-
-## License
+## ライセンス
 
 [![WTFPL](http://www.wtfpl.net/wp-content/uploads/2012/12/wtfpl-badge-1.png)](http://www.wtfpl.net/)
 
-## References (Japanese)
+## 参考
 
 - [オセロ・リバーシプログラミング講座 ～勝ち方・考え方～](http://uguisu.skr.jp/othello/)
 - [オセロプログラムの作り方](http://hp.vector.co.jp/authors/VA015468/platina/algo/)
