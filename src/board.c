@@ -6,27 +6,42 @@
 // 8x8マス+周囲の番兵
 Disk board[100] = {};
 
-// 周囲8方向への配列インデックス差分値
+// 周囲8方向へのインデックス差分
 int directions[] = {
     -10, // 上
-    -9,  // 右上
-    1,   // 右
-    11,  // 右下
-    10,  // 下
-    9,   // 左下
-    -1,  // 左
+     -9, // 右上
+      1, // 右
+     11, // 右下
+     10, // 下
+      9, // 左下
+     -1, // 左
     -11  // 左上
 };
 
-void init()
+void init_board()
 {
+    for (int i = 0; i < 100; i++)
+    {
+        board[i] = NONE;
+    }
+
     // 石の初期配置
     board[44] = WHITE;
     board[45] = BLACK;
     board[54] = BLACK;
     board[55] = WHITE;
+}
 
-    print_board();
+bool can_put_disk(int x, int y, Disk disk)
+{
+    if (in_board(x, y)
+        && is_none(x, y)
+        && (count_reversal_disks_8dir(x, y, disk, false) > 0))
+    {
+        return true;
+    }
+
+    return false;
 }
 
 bool in_board(int x, int y)
@@ -39,7 +54,7 @@ bool is_none(int x, int y)
     return (board[y * 10 + x] == NONE) ? true : false;
 }
 
-int count_all_disks(Disk disk)
+int count_reversal_disks(Disk disk)
 {
     int count = 0;
 
@@ -49,7 +64,7 @@ int count_all_disks(Disk disk)
         {
             if (board[y * 10 + x] == NONE)
             {
-                count += count_around_disks(x, y, disk, false);
+                count += count_reversal_disks_8dir(x, y, disk, false);
             }
         }
     }
@@ -57,19 +72,19 @@ int count_all_disks(Disk disk)
     return count;
 }
 
-int count_around_disks(int x, int y, Disk disk, bool flip)
+int count_reversal_disks_8dir(int x, int y, Disk disk, bool flip)
 {
     int count = 0;
 
     for (int i = 0; i < 8; i++)
     {
-        count += count_straight_disks(x, y, directions[i], disk, flip);
+        count += count_reversal_disks_1dir(x, y, directions[i], disk, flip);
     }
 
     return count;
 }
 
-int count_straight_disks(int x, int y, int dir, Disk disk, bool flip)
+int count_reversal_disks_1dir(int x, int y, int dir, Disk disk, bool flip)
 {
     // 返せる石の座標
     int indices[8] = {0};
@@ -88,7 +103,10 @@ int count_straight_disks(int x, int y, int dir, Disk disk, bool flip)
         }
         else
         {
-            if (next == disk) break;
+            if (next == disk)
+            {
+                break;
+            }
             else
             {
                 indices[count] = next_index;
@@ -112,9 +130,12 @@ int count_straight_disks(int x, int y, int dir, Disk disk, bool flip)
 
 int put_disk(int x, int y, Disk disk)
 {
-    int count = count_around_disks(x, y, disk, true);
+    int count = count_reversal_disks_8dir(x, y, disk, true);
 
-    if (count) board[y * 10 + x] = disk;
+    if (count > 0)
+    {
+        board[y * 10 + x] = disk;
+    }
 
     return count;
 }
@@ -125,7 +146,10 @@ int count_disks(Disk disk)
 
     for (int i = 0; i < 100; i++)
     {
-        if (board[i] == disk) count++;
+        if (board[i] == disk)
+        {
+            count++;
+        }
     }
 
     return count;
@@ -142,15 +166,15 @@ void print_board()
         {
             switch (board[y * 10 + x])
             {
-            case WHITE:
-                printf("O ");
-                break;
-            case BLACK:
-                printf("@ ");
-                break;
-            default:
-                printf("- ");
-                break;
+                case WHITE:
+                    printf("O ");
+                    break;
+                case BLACK:
+                    printf("@ ");
+                    break;
+                default:
+                    printf("- ");
+                    break;
             }
         }
         printf("\n");

@@ -11,7 +11,10 @@ typedef enum Disk {
 } Disk;
 
 // 盤面の初期化
-void init();
+void init_board();
+
+// 設置判定
+bool can_put_disk(int, int, Disk);
 
 // 座標判定
 // 盤内か
@@ -19,12 +22,13 @@ bool in_board(int, int);
 // 空か
 bool is_none(int, int);
 
+// 石を数える
 // 返せるすべての石数を調べる
-int count_all_disks(Disk);
+int count_reversal_disks(Disk);
 // ある座標に置くとき返せる石数を調べる/石を返す
-int count_around_disks(int, int, Disk, bool);
+int count_reversal_disks_8dir(int, int, Disk, bool);
 // ある座標からある方向への返せる石数を調べる/石を返す
-int count_straight_disks(int, int, int, Disk, bool);
+int count_reversal_disks_1dir(int, int, int, Disk, bool);
 
 // 石を置く、石を返す
 int put_disk(int, int, Disk);

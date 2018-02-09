@@ -6,8 +6,7 @@
 #include "board.h"
 
 bool play_turn(int, int*);
-void player_input(int);
-void program_input(int);
+void input(Disk, bool);
 void judge();
 
 int main()
@@ -19,9 +18,8 @@ int main()
 
     srand((unsigned)time(NULL));
 
-    // プレイヤーは先攻黒番
-    printf("You are Black\n");
-    init();
+    init_board();
+    print_board();
 
     while (play_turn(turn, &prev_count))
     {
@@ -35,24 +33,36 @@ int main()
 }
 
 // ターン行動
-bool play_turn(int turn,int* prev_count)
+bool play_turn(int turn, int* prev_count)
 {
+    // 石色
     Disk disk = (turn % 2 == 1) ? BLACK : WHITE;
+    char* disk_str = (disk == BLACK) ? "BLACK" : "WHITE";
 
-    int count = count_all_disks(disk);
-
+    int count = count_reversal_disks(disk);
     // 返せる石がない
     if (count == 0)
     {
         // 両者返せなくなったときゲーム終了
-        if (*prev_count == 0) return false;
-        else printf("pass\n");
+        if (*prev_count == 0)
+        {
+            return false;
+        }
+        else
+        {
+            // パス
+            printf("[%d] %s: pass\n", turn, disk_str);
+        }
     }
     else
     {
-        // 座標入力
-        if (turn % 2 == 1) player_input(turn);
-        else  program_input(turn);
+        // 入力
+        printf("[%d] %s: ", turn, disk_str);
+
+        // 黒番がプレイヤー
+        bool is_player = (disk == BLACK) ? true : false;
+
+        input(disk, is_player);
     }
 
     *prev_count = count;
@@ -62,52 +72,40 @@ bool play_turn(int turn,int* prev_count)
     return true;
 }
 
-// プレイヤー側入力
-void player_input(int turn)
+// 入力
+void input(Disk disk, bool is_player)
 {
     char input[4];
     int x, y;
 
-    do
+    // プレイヤー/プログラムで動作切替
+    if (is_player)
     {
         do
         {
-            printf("[%d] Black: ", turn);
-            fgets(input, 4, stdin);
-
             // 入力した文字型変数を1~8の整数値に変換する
+            fgets(input, 4, stdin);
             x = tolower(input[0]) - '`';
             y = input[1] - '0';
         }
-        // 石を置けるか
-        while (!in_board(x, y) || !is_none(x, y));
+        // 石の設置判定
+        while (!can_put_disk(x, y, disk));
     }
-    // 石を返せるか
-    while (put_disk(x, y, BLACK) == 0);
-}
-
-// プログラム側入力
-void program_input(int turn)
-{
-    printf("[%d] White: ", turn);
-
-    int x, y;
-
-    do
+    else
     {
         do
         {
             x = rand() % 8 + 1;
             y = rand() % 8 + 1;
         }
-        // 石を置けるか
-        while (!in_board(x, y) || !is_none(x, y));
-    }
-    // 石を返せるか
-    while (put_disk(x, y, WHITE) == 0);
+        // 石の設置判定
+        while (!can_put_disk(x, y, disk));
 
-    // プレイヤーと同様に入力座標を表示
-    printf("%c%c\n", x + '`', y + '0');
+        // プレイヤーと同様に入力座標を表示
+        printf("%c%c\n", x + '`', y + '0');
+    }
+
+    put_disk(x, y, disk);
 }
 
 // 石の集計
@@ -123,11 +121,11 @@ void judge()
 
     if (num_black > num_white)
     {
-        printf("* You Win *\n");
+        printf("* BLACK Wins *\n");
     }
     else if (num_black < num_white)
     {
-        printf("* You Lose *\n");
+        printf("* WHITE Wins *\n");
     }
     else
     {
