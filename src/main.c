@@ -98,7 +98,6 @@ void input(Disk disk, bool is_player)
             x = rand() % 8 + 1;
             y = rand() % 8 + 1;
         }
-        // 石の設置判定
         while (!can_put_disk(x, y, disk));
 
         // プレイヤーと同様に入力座標を表示

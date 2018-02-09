@@ -5,9 +5,9 @@
 
 // 盤面上の石
 typedef enum Disk {
-    NONE,  // 空
-    BLACK, // 黒石
-    WHITE  // 白石
+    WHITE = -1,  // 白石
+    NONE  =  0,  // 空
+    BLACK =  1 // 黒石
 } Disk;
 
 // 盤面の初期化
@@ -30,7 +30,7 @@ int count_reversal_disks_8dir(int, int, Disk, bool);
 // ある座標からある方向への返せる石数を調べる/石を返す
 int count_reversal_disks_1dir(int, int, int, Disk, bool);
 
-// 石を置く、石を返す
+// 石の設置と反転
 int put_disk(int, int, Disk);
 
 // 石の集計

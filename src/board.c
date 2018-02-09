@@ -4,7 +4,7 @@
 
 // 盤面
 // 8x8マス+周囲の番兵
-Disk board[100] = {};
+Disk board[100] = {NONE};
 
 // 周囲8方向へのインデックス差分
 int directions[] = {
@@ -87,8 +87,10 @@ int count_reversal_disks_8dir(int x, int y, Disk disk, bool flip)
 int count_reversal_disks_1dir(int x, int y, int dir, Disk disk, bool flip)
 {
     // 返せる石の座標
+    // 8つまで記憶
     int indices[8] = {0};
     int count = 0;
+    // 探索深さ
     int nest = 1;
 
     while (1)
@@ -96,6 +98,7 @@ int count_reversal_disks_1dir(int x, int y, int dir, Disk disk, bool flip)
         int next_index = y * 10 + x + dir * nest;
         Disk next = board[next_index];
 
+        // 空き/盤面端に到達したとき返せない
         if (next == NONE)
         {
             count = 0;
@@ -107,6 +110,7 @@ int count_reversal_disks_1dir(int x, int y, int dir, Disk disk, bool flip)
             {
                 break;
             }
+            // 相手の石があるとき座標をカウント
             else
             {
                 indices[count] = next_index;
@@ -116,7 +120,7 @@ int count_reversal_disks_1dir(int x, int y, int dir, Disk disk, bool flip)
         }
     }
 
-    // 石を返す
+    // フラグ立つとき石を返す
     if ((count > 0) && flip)
     {
         for (int i = 0; i < count; i++)
@@ -128,6 +132,7 @@ int count_reversal_disks_1dir(int x, int y, int dir, Disk disk, bool flip)
     return count;
 }
 
+// 石の設置と反転
 int put_disk(int x, int y, Disk disk)
 {
     int count = count_reversal_disks_8dir(x, y, disk, true);
