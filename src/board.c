@@ -158,11 +158,13 @@ void put_disk(int x, int y, Disk disk)
 
 void print_board()
 {
-    printf("  A B C D E F G H \n");
+    printf("    a b c d e f g h \n");
+    printf("   -----------------\n");
 
     for (int y = 1; y <= 8; y++)
     {
-        printf("%d ", y);
+        printf("%d | ", y);
+
         for (int x = 1; x <= 8; x++)
         {
             switch (board[y * 10 + x])
@@ -178,6 +180,8 @@ void print_board()
                     break;
             }
         }
-        printf("\n");
+
+        printf("|\n");
     }
+    printf("   -----------------\n");
 }
