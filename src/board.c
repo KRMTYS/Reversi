@@ -51,7 +51,7 @@ bool can_put_disk(int x, int y, Disk disk)
 
     for (int i = 0; i < 8; i++)
     {
-        if (count_linear_reversal_disks(x, y, dir[i], disk, false) > 0)
+        if (count_linear_reversal_disks(x, y, dir[i], disk) > 0)
         {
             return true;
         }
@@ -70,7 +70,7 @@ int count_all_reversal_disks(Disk disk)
         {
             if (board[y * 10 + x] == BLANK)
             {
-                count += count_reversal_disks(x, y, disk, false);
+                count += count_reversal_disks(x, y, disk);
             }
         }
     }
@@ -78,60 +78,45 @@ int count_all_reversal_disks(Disk disk)
     return count;
 }
 
-int count_reversal_disks(int x, int y, Disk disk, bool flip)
+int count_reversal_disks(int x, int y, Disk disk)
 {
     int count = 0;
 
     for (int i = 0; i < 8; i++)
     {
-        count += count_linear_reversal_disks(x, y, dir[i], disk, flip);
+        count += count_linear_reversal_disks(x, y, dir[i], disk);
     }
 
     return count;
 }
 
-int count_linear_reversal_disks(int x, int y, int dir, Disk disk, bool flip)
+int count_linear_reversal_disks(int x, int y, int dir, Disk disk)
 {
-    // 返せる石の座標
-    // 8つまで記憶
-    int indices[8] = {0};
     int count = 0;
-    // 探索深さ
-    int nest = 1;
+
+    int index = y * 10 + x;
 
     while (true)
     {
-        int next_index = y * 10 + x + dir * nest;
-        Disk next = board[next_index];
+        index += dir;
 
-        // 空き/盤面端に到達したとき返せない
-        if (next == BLANK)
+        // 次の石
+        Disk next_disk = board[index];
+
+        // 空き/盤面端のとき返せる石はない
+        if (next_disk == BLANK)
         {
             count = 0;
             break;
         }
+        // 同色の石であるときカウント終了
+        else if (next_disk == disk)
+        {
+            break;
+        }
         else
         {
-            if (next == disk)
-            {
-                break;
-            }
-            // 相手の石があるとき座標をカウント
-            else
-            {
-                indices[count] = next_index;
-                count++;
-                nest++;
-            }
-        }
-    }
-
-    // フラグ立つとき石を返す
-    if ((count > 0) && flip)
-    {
-        for (int i = 0; i < count; i++)
-        {
-            board[indices[i]] = disk;
+            count++;
         }
     }
 
@@ -158,7 +143,15 @@ int count_disks(Disk disk)
 
 void put_disk(int x, int y, Disk disk)
 {
-    count_reversal_disks(x, y, disk, true);
+    for (int i = 0; i < 8; i++)
+    {
+        int count = count_linear_reversal_disks(x, y, dir[i], disk);
+
+        for (int j = 1; j <= count; j++)
+        {
+            board[y * 10 + x + j * dir[i]] = disk;
+        }
+    }
 
     board[y * 10 + x] = disk;
 }

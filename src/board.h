@@ -26,10 +26,10 @@ bool can_put_disk(int, int, Disk);
 // 集計
 // 返せるすべての石数を調べる
 int count_all_reversal_disks(Disk);
-// ある座標に置くとき返せる石数を調べる/石を返す
-int count_reversal_disks(int, int, Disk, bool);
-// ある座標からある方向への返せる石数を調べる/石を返す
-int count_linear_reversal_disks(int, int, int, Disk, bool);
+// ある座標に置くとき返せる石数を調べる
+int count_reversal_disks(int, int, Disk);
+// ある座標から一方向の返せる石数を調べる
+int count_linear_reversal_disks(int, int, int, Disk);
 // 盤上の石を数える
 int count_disks(Disk);
 
