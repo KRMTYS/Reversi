@@ -39,7 +39,7 @@ bool play_turn(int turn, int* prev_count)
     Disk disk = (turn % 2 == 1) ? BLACK : WHITE;
     char* disk_str = (disk == BLACK) ? "BLACK" : "WHITE";
 
-    int count = count_reversal_disks(disk);
+    int count = count_all_reversal_disks(disk);
     // 返せる石がない
     if (count == 0)
     {
@@ -60,9 +60,7 @@ bool play_turn(int turn, int* prev_count)
         printf("[%d] %s: ", turn, disk_str);
 
         // 黒番がプレイヤー
-        bool is_player = (disk == BLACK) ? true : false;
-
-        input(disk, is_player);
+        input(disk, (disk == BLACK));
     }
 
     *prev_count = count;

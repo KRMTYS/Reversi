@@ -4,10 +4,10 @@
 
 // 盤面
 // 8x8マス+周囲の番兵
-Disk board[100] = {NONE};
+Disk board[100];
 
 // 周囲8方向へのインデックス差分
-int directions[] = {
+int dir[] = {
     -10, // 上
      -9, // 右上
       1, // 右
@@ -22,7 +22,7 @@ void init_board()
 {
     for (int i = 0; i < 100; i++)
     {
-        board[i] = NONE;
+        board[i] = BLANK;
     }
 
     // 石の初期配置
@@ -32,29 +32,35 @@ void init_board()
     board[55] = WHITE;
 }
 
-bool can_put_disk(int x, int y, Disk disk)
-{
-    if (in_board(x, y)
-        && is_none(x, y)
-        && (count_reversal_disks_8dir(x, y, disk, false) > 0))
-    {
-        return true;
-    }
-
-    return false;
-}
-
 bool in_board(int x, int y)
 {
     return ((x >= 1) && (x <= 8) && (y >= 1) && (y <= 8)) ? true : false;
 }
 
-bool is_none(int x, int y)
+bool is_blank(int x, int y)
 {
-    return (board[y * 10 + x] == NONE) ? true : false;
+    return (board[y * 10 + x] == BLANK) ? true : false;
 }
 
-int count_reversal_disks(Disk disk)
+bool can_put_disk(int x, int y, Disk disk)
+{
+    if (!in_board(x, y) || !is_blank(x, y))
+    {
+        return false;
+    }
+
+    for (int i = 0; i < 8; i++)
+    {
+        if (count_linear_reversal_disks(x, y, dir[i], disk, false) > 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+int count_all_reversal_disks(Disk disk)
 {
     int count = 0;
 
@@ -62,9 +68,9 @@ int count_reversal_disks(Disk disk)
     {
         for (int x = 1; x <= 8; x++)
         {
-            if (board[y * 10 + x] == NONE)
+            if (board[y * 10 + x] == BLANK)
             {
-                count += count_reversal_disks_8dir(x, y, disk, false);
+                count += count_reversal_disks(x, y, disk, false);
             }
         }
     }
@@ -72,19 +78,19 @@ int count_reversal_disks(Disk disk)
     return count;
 }
 
-int count_reversal_disks_8dir(int x, int y, Disk disk, bool flip)
+int count_reversal_disks(int x, int y, Disk disk, bool flip)
 {
     int count = 0;
 
     for (int i = 0; i < 8; i++)
     {
-        count += count_reversal_disks_1dir(x, y, directions[i], disk, flip);
+        count += count_linear_reversal_disks(x, y, dir[i], disk, flip);
     }
 
     return count;
 }
 
-int count_reversal_disks_1dir(int x, int y, int dir, Disk disk, bool flip)
+int count_linear_reversal_disks(int x, int y, int dir, Disk disk, bool flip)
 {
     // 返せる石の座標
     // 8つまで記憶
@@ -93,13 +99,13 @@ int count_reversal_disks_1dir(int x, int y, int dir, Disk disk, bool flip)
     // 探索深さ
     int nest = 1;
 
-    while (1)
+    while (true)
     {
         int next_index = y * 10 + x + dir * nest;
         Disk next = board[next_index];
 
         // 空き/盤面端に到達したとき返せない
-        if (next == NONE)
+        if (next == BLANK)
         {
             count = 0;
             break;
@@ -132,32 +138,29 @@ int count_reversal_disks_1dir(int x, int y, int dir, Disk disk, bool flip)
     return count;
 }
 
-// 石の設置と反転
-int put_disk(int x, int y, Disk disk)
+int count_disks(Disk disk)
 {
-    int count = count_reversal_disks_8dir(x, y, disk, true);
+    int count = 0;
 
-    if (count > 0)
+    for (int y = 1; y <= 8; y++)
     {
-        board[y * 10 + x] = disk;
+        for (int x = 1; x <= 8; x++)
+        {
+            if (board[y * 10 + x] == disk)
+            {
+                count++;
+            }
+        }
     }
 
     return count;
 }
 
-int count_disks(Disk disk)
+void put_disk(int x, int y, Disk disk)
 {
-    int count = 0;
+    count_reversal_disks(x, y, disk, true);
 
-    for (int i = 0; i < 100; i++)
-    {
-        if (board[i] == disk)
-        {
-            count++;
-        }
-    }
-
-    return count;
+    board[y * 10 + x] = disk;
 }
 
 void print_board()
