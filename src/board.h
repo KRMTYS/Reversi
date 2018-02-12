@@ -17,24 +17,26 @@ void init_board();
 
 // 座標判定
 // 盤内か
-bool in_board(int, int);
+bool is_on_board(int, int);
 // 空か
 bool is_blank(int, int);
-// 石を置けるか
-bool can_put_disk(int, int, Disk);
+// 有効手か
+bool is_valid_move(int, int, Disk);
 
 // 集計
-// 返せるすべての石数を調べる
-int count_all_reversal_disks(Disk);
+// 有効手数を調べる
+int count_valid_moves(Disk);
+// ある座標から一方向の返せる石数を調べる
+int count_straight_reversal_disks(int, int, int, Disk);
 // ある座標に置くとき返せる石数を調べる
 int count_reversal_disks(int, int, Disk);
-// ある座標から一方向の返せる石数を調べる
-int count_linear_reversal_disks(int, int, int, Disk);
+// 返せるすべての石数を調べる
+int count_all_reversal_disks(Disk);
 // 盤上の石を数える
 int count_disks(Disk);
 
 // 石の設置と反転
-void put_disk(int, int, Disk);
+void put_and_flip(int, int, Disk);
 
 // 盤面の描画
 void print_board();
