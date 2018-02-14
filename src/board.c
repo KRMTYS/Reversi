@@ -3,11 +3,10 @@
 #include "board.h"
 
 // 盤面
-// 8x8マス+周囲の番兵
-Disk board[100];
+Board board;
 
 // 周囲8方向へのインデックス差分
-int dir[] = {
+const int dir[] = {
     -10, // 上
      -9, // 右上
       1, // 右
@@ -20,16 +19,18 @@ int dir[] = {
 
 void init_board()
 {
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < BOARD_LENGTH; i++)
     {
-        board[i] = BLANK;
+        board.square[i] = EMPTY;
     }
 
     // 石の初期配置
-    board[44] = WHITE;
-    board[45] = BLACK;
-    board[54] = BLACK;
-    board[55] = WHITE;
+    board.square[44] = WHITE;
+    board.square[45] = BLACK;
+    board.square[54] = BLACK;
+    board.square[55] = WHITE;
+
+    board.turn = BLACK;
 }
 
 bool is_on_board(int x, int y)
@@ -37,14 +38,14 @@ bool is_on_board(int x, int y)
     return ((x >= 1) && (x <= 8) && (y >= 1) && (y <= 8)) ? true : false;
 }
 
-bool is_blank(int x, int y)
+bool is_empty(int x, int y)
 {
-    return (board[y * 10 + x] == BLANK) ? true : false;
+    return (board.square[y * 10 + x] == EMPTY) ? true : false;
 }
 
 bool is_valid_move(int x, int y, Disk disk)
 {
-    if (!is_on_board(x, y) || !is_blank(x, y))
+    if (!is_on_board(x, y) || !is_empty(x, y))
     {
         return false;
     }
@@ -86,7 +87,7 @@ int count_all_reversal_disks(Disk disk)
     {
         for (int x = 1; x <= 8; x++)
         {
-            if (board[y * 10 + x] == BLANK)
+            if (board.square[y * 10 + x] == EMPTY)
             {
                 count += count_reversal_disks(x, y, disk);
             }
@@ -115,10 +116,10 @@ int count_straight_reversal_disks(int x, int y, int dir, Disk disk)
     for (int i = y * 10 + x + dir; ; i += dir)
     {
         // 次の石
-        Disk next = board[i];
+        Disk next = board.square[i];
 
         // 空き/盤面端のとき返せる石はない
-        if (next == BLANK)
+        if (next == EMPTY)
         {
             count = 0;
             break;
@@ -145,7 +146,7 @@ int count_disks(Disk disk)
     {
         for (int x = 1; x <= 8; x++)
         {
-            if (board[y * 10 + x] == disk)
+            if (board.square[y * 10 + x] == disk)
             {
                 count++;
             }
@@ -153,6 +154,16 @@ int count_disks(Disk disk)
     }
 
     return count;
+}
+
+bool has_valid_move(Disk disk)
+{
+    if (count_valid_moves(disk) > 0)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 void put_and_flip(int x, int y, Disk disk)
@@ -163,11 +174,11 @@ void put_and_flip(int x, int y, Disk disk)
 
         for (int j = 1; j <= count; j++)
         {
-            board[y * 10 + x + j * dir[i]] = disk;
+            board.square[y * 10 + x + j * dir[i]] = disk;
         }
     }
 
-    board[y * 10 + x] = disk;
+    board.square[y * 10 + x] = disk;
 }
 
 void print_board()
@@ -181,7 +192,7 @@ void print_board()
 
         for (int x = 1; x <= 8; x++)
         {
-            switch (board[y * 10 + x])
+            switch (board.square[y * 10 + x])
             {
                 case WHITE:
                     printf("O ");

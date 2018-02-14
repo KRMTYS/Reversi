@@ -3,14 +3,26 @@
 
 #include <stdbool.h>
 
+#define BOARD_LENGTH 100
+
 // 盤面上の石
 typedef enum
 {
     WHITE = -1, // 白石
-    BLANK =  0, // 空
+    EMPTY =  0, // 空
     BLACK =  1  // 黒石
 }
 Disk;
+
+typedef struct
+{
+    // 盤面
+    // 8x8マス + 周囲の番兵
+    Disk square[BOARD_LENGTH];
+    // 手番
+    Disk turn;
+}
+Board;
 
 // 盤面の初期化
 void init_board();
@@ -19,7 +31,7 @@ void init_board();
 // 盤内か
 bool is_on_board(int, int);
 // 空か
-bool is_blank(int, int);
+bool is_empty(int, int);
 // 有効手か
 bool is_valid_move(int, int, Disk);
 
@@ -34,6 +46,9 @@ int count_reversal_disks(int, int, Disk);
 int count_all_reversal_disks(Disk);
 // 盤上の石を数える
 int count_disks(Disk);
+
+// 有効手が存在するか
+bool has_valid_move(Disk);
 
 // 石の設置と反転
 void put_and_flip(int, int, Disk);
