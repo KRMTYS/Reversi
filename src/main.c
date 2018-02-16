@@ -5,77 +5,52 @@
 
 #include "board.h"
 
-bool play_turn(int, int*);
-void input(Disk, bool);
-void judge();
+void input(Board*);
 
 int main()
 {
-    // 前ターンで置ける石数
-    int prev_count = 0;
-    // ターン数
-    int turn = 1;
+    // 盤面
+    Board board;
 
     srand((unsigned)time(NULL));
 
-    init_board();
-    print_board();
+    init_board(&board);
 
-    while (play_turn(turn, &prev_count))
+    while (true)
     {
-        print_board();
-        turn++;
+        print_board(&board);
+
+        State state = get_state(&board);
+
+        if (state == DO_TURN)
+        {
+            input(&board);
+        }
+        else if (state == PASS)
+        {
+            printf("Pass\n");
+        }
+        else
+        {
+            break;
+        }
+
     }
 
-    judge();
+    judge(&board);
 
     return 0;
 }
 
-// ターン行動
-bool play_turn(int turn, int* prev_count)
-{
-    // 石色
-    Disk disk = (turn % 2 == 1) ? BLACK : WHITE;
-    char* disk_str = (disk == BLACK) ? "BLACK" : "WHITE";
-
-    int count = count_valid_moves(disk);
-
-    // 有効手がない
-    if (count == 0)
-    {
-        // 両者有効手がなくなったときゲーム終了
-        if (*prev_count == 0)
-        {
-            return false;
-        }
-        else
-        {
-            // パス
-            printf("[%d] %s: pass\n", turn, disk_str);
-        }
-    }
-
-    printf("[%d] %s: ", turn, disk_str);
-    // 黒番がプレイヤー
-    input(disk, (disk == BLACK));
-
-    *prev_count = count;
-
-    printf("\n");
-
-    return true;
-}
-
 // 入力
-void input(Disk disk, bool is_player)
+void input(Board* board)
 {
     char input[4];
     int x, y;
 
-    // プレイヤー/プログラムで動作切替
-    if (is_player)
+    if (board->current_turn == BLACK)
     {
+        printf("Black >> ");
         do
         {
             // 入力した文字型変数を1~8の整数値に変換する
@@ -84,45 +59,24 @@ void input(Disk disk, bool is_player)
             y = input[1] - '0';
         }
         // 石の設置判定
-        while (!is_valid_move(x, y, disk));
+        while (!is_valid_move(x, y, board->current_turn, board));
     }
     else
     {
+        printf("White >> ");
         do
         {
+            // ランダムな位置に置く
             x = rand() % 8 + 1;
             y = rand() % 8 + 1;
         }
-        while (!is_valid_move(x, y, disk));
+        while (!is_valid_move(x, y, board->current_turn, board));
 
         // プレイヤーと同様に入力座標を表示
         printf("%c%c\n", x + '`', y + '0');
     }
 
-    put_and_flip(x, y, disk);
-}
+    put_and_flip(TO_POS(x, y), board->current_turn, board);
 
-// 石の集計
-void judge()
-{
-    int num_black = count_disks(BLACK);
-    int num_white = count_disks(WHITE);
-
-    printf("\n\n*********\n");
-    printf("Black: %2d\n", num_black);
-    printf("White: %2d\n", num_white);
-    printf("*********\n");
-
-    if (num_black > num_white)
-    {
-        printf("* BLACK Wins *\n");
-    }
-    else if (num_black < num_white)
-    {
-        printf("* WHITE Wins *\n");
-    }
-    else
-    {
-        printf("* Draw *\n");
-    }
+    printf("\n");
 }
