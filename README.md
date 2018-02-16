@@ -8,25 +8,21 @@
 
 ## 詳細
 
-- コンソール上に盤面が表示される
+- コンソール上に盤が表示される
     - 黒石：`@` 白石：`O`
 - プレイヤーは先攻、黒石で固定
 - 石を置く座標は
     `列アルファベット[a~h]+行番号[1~8]`
     と指定して入力できる
+
+    例：
     ```
-    [1] Black: d3
+    Black >> d3
     ```
 
-## 開発･テスト環境
+## ビルド
 
-- Windows10 64bit + MinGW
-    - gcc version 6.3.0
-    - GNU Make 3.82.90
-
-- Windows Subsystem for Linux: Ubuntu 14.04.5 LTS
-    - gcc version 4.8.4
-    - GNU Make 3.81
+`make`、`mingw32-make`
 
 ## ライセンス
 
@@ -35,4 +31,7 @@
 ## 参考
 
 - [オセロ・リバーシプログラミング講座 ～勝ち方・考え方～](http://uguisu.skr.jp/othello/)
+
 - [オセロプログラムの作り方](http://hp.vector.co.jp/authors/VA015468/platina/algo/)
+
+- [リバーシプログラムの作り方](http://www.es-cube.net/es-cube/reversi/sample/index.html)

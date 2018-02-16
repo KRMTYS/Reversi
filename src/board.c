@@ -193,7 +193,7 @@ int put_and_flip(Pos pos, Disk disk, Board* board)
 
     push(pos, board);
 
-    REVERSE(board->current_turn);
+    board->current_turn = REVERSE(board->current_turn);
 
     return count;
 }
