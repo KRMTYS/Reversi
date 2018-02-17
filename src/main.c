@@ -16,25 +16,22 @@ int main()
 
     init_board(&board);
 
-    while (true)
+    // ゲーム状態
+    State state;
+
+    while ((state = get_state(&board)) != FINISH)
     {
         print_board(&board);
 
-        State state = get_state(&board);
-
-        if (state == DO_TURN)
+        switch(state)
         {
-            input(&board);
+            case DO_TURN:
+                input(&board);
+                break;
+            default:
+                printf("Pass\n");
+                break;
         }
-        else if (state == PASS)
-        {
-            printf("Pass\n");
-        }
-        else
-        {
-            break;
-        }
-
     }
 
     judge(&board);
@@ -59,7 +56,7 @@ void input(Board* board)
             y = input[1] - '0';
         }
         // 石の設置判定
-        while (!is_valid_move(x, y, board->current_turn, board));
+        while (!is_valid(x, y, board->current_turn, board));
     }
     else
     {
@@ -70,7 +67,7 @@ void input(Board* board)
             x = rand() % 8 + 1;
             y = rand() % 8 + 1;
         }
-        while (!is_valid_move(x, y, board->current_turn, board));
+        while (!is_valid(x, y, board->current_turn, board));
 
         // プレイヤーと同様に入力座標を表示
         printf("%c%c\n", x + '`', y + '0');

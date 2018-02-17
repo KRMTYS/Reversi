@@ -14,7 +14,7 @@
 // 逆の色を返す
 #define REVERSE(c) (-1 * c)
 
-// スタック長
+// スタック長、適当
 #define STACK_LENGTH 1000
 
 // 石
@@ -87,7 +87,7 @@ bool is_on_board(int, int);
 // 空か
 bool is_empty(int, int, Board*);
 // 有効手か
-bool is_valid_move(int, int, Disk, Board*);
+bool is_valid(int, int, Disk, Board*);
 // 有効手を持つか
 bool has_valid_move(Disk, Board*);
 

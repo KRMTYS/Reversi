@@ -36,7 +36,7 @@ bool is_empty(int x, int y, Board* board)
     return (board->square[TO_POS(x, y)] == EMPTY) ? true : false;
 }
 
-bool is_valid_move(int x, int y, Disk disk, Board* board)
+bool is_valid(int x, int y, Disk disk, Board* board)
 {
     if (!is_on_board(x, y) || !is_empty(x, y, board))
     {
@@ -208,6 +208,8 @@ void undo(Board* board)
     {
         board->square[pop(board)] *= -1;
     }
+
+    board->current_turn = REVERSE(board->current_turn);
 }
 
 void print_board(Board* board)
