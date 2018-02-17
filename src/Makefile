@@ -1,6 +1,6 @@
 CC = gcc
 
-CFLAGS = -std=c99
+CFLAGS = -Wall -std=c11
 
 TARGET = reversi
 
