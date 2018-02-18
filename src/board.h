@@ -11,6 +11,10 @@
 // 座標インデックスへの変換
 #define TO_POS(x, y) (y * SQUARE_SIZE + x)
 
+// (x, y)への変換
+#define TO_X(p) (p%SQUARE_SIZE)
+#define TO_Y(p) ((int)(p/SQUARE_SIZE))
+
 // 逆の色を返す
 #define REVERSE(c) (-1 * c)
 

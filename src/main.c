@@ -4,6 +4,7 @@
 #include <time.h>
 
 #include "board.h"
+#include "evaluation.h"
 
 void input(Board*);
 
@@ -19,14 +20,20 @@ int main()
     // ゲーム状態
     State state;
 
+    // ターン数
+    int turn = 1;
+
     while ((state = get_state(&board)) != FINISH)
     {
         print_board(&board);
+
+        printf("[%d] ", turn);
 
         switch(state)
         {
             case DO_TURN:
                 input(&board);
+                turn++;
                 break;
             default:
                 printf("Pass\n");
@@ -42,38 +49,49 @@ int main()
 // 入力
 void input(Board* board)
 {
-    char input[4];
-    int x, y;
-
     if (board->current_turn == BLACK)
     {
+        char input[2];
+        int x, y;
+
         printf("Black >> ");
-        do
+
+        while (true)
         {
-            // 入力した文字型変数を1~8の整数値に変換する
-            fgets(input, 4, stdin);
+            // 入力した文字を1~8の(x, y)座標に変換
+            fgets(input, 3, stdin);
             x = tolower(input[0]) - '`';
             y = input[1] - '0';
+            fflush(stdin);
+
+            // 石の設置判定
+            if (is_valid(x, y, board->current_turn, board))
+            {
+                break;
+            }
+            else
+            {
+                printf("Cannot put here: input again >> ");
+            }
         }
-        // 石の設置判定
-        while (!is_valid(x, y, board->current_turn, board));
+
+        put_and_flip(TO_POS(x, y), board->current_turn, board);
     }
     else
     {
         printf("White >> ");
-        do
-        {
-            // ランダムな位置に置く
-            x = rand() % 8 + 1;
-            y = rand() % 8 + 1;
-        }
-        while (!is_valid(x, y, board->current_turn, board));
+
+        Pos move;
+
+        // minmax法での先読み評価
+        // 5手先まで
+        minmax(&move, board->current_turn, board->current_turn, 5, board);
 
         // プレイヤーと同様に入力座標を表示
-        printf("%c%c\n", x + '`', y + '0');
-    }
+        printf("%c%c\n", TO_X(move) + '`', TO_Y(move) + '0');
 
-    put_and_flip(TO_POS(x, y), board->current_turn, board);
+        put_and_flip(move, board->current_turn, board);
+    }
 
     printf("\n");
 }

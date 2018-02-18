@@ -232,7 +232,14 @@ void print_board(Board* board)
                     printf("@ ");
                     break;
                 default:
-                    printf("- ");
+                    if (is_valid(x, y, board->current_turn, board))
+                    {
+                        printf("* ");
+                    }
+                    else
+                    {
+                        printf("- ");
+                    }
                     break;
             }
         }
@@ -247,7 +254,7 @@ void judge(Board* board)
     int num_black = count_disks(BLACK, board);
     int num_white = count_disks(WHITE, board);
 
-    printf("\n\n***********\n");
+    printf("\n***********\n");
     printf("Black : %2d\n", num_black);
     printf("White : %2d\n", num_white);
     printf("***********\n");

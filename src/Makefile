@@ -6,7 +6,8 @@ TARGET = reversi
 
 OBJS = \
 	main.o\
-	board.o
+	board.o\
+	evaluation.o
 
 RM = rm
 
@@ -26,6 +27,9 @@ main.o: main.c
 
 board.o: board.c
 	$(CC) $(CFLAGS) -c board.c
+
+evaluation.o: evaluation.c
+	$(CC) $(CFLAGS) -c evaluation.c
 
 .PHONY: clean
 clean:
