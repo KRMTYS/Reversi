@@ -83,9 +83,9 @@ void input(Board* board)
 
         Pos move;
 
-        // minmax法での先読み評価
+        // negamax法での先読み評価
         // 5手先まで
-        minmax(&move, board->current_turn, board->current_turn, 5, board);
+        negamax(&move, board->current_turn, board->current_turn, 5, board);
 
         // プレイヤーと同様に入力座標を表示
         printf("%c%c\n", TO_X(move) + '`', TO_Y(move) + '0');

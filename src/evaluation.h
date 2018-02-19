@@ -9,4 +9,7 @@ int evaluate(Disk, Board*);
 // MinMax法による探索
 int minmax(Pos*, Disk, Disk, int, Board*);
 
+// NegaMax法による探索
+int negamax(Pos*, Disk, Disk, int, Board*);
+
 #endif
