@@ -20,9 +20,9 @@ int minmax(Pos* next_move, Disk self_disk, Disk current_turn, int depth, Board* 
     // 子ノードの評価値
     int child_score = (self_disk == current_turn) ? INT_MIN : INT_MAX;
 
-    for (int y = 1; y < SQUARE_SIZE; y++)
+    for (int y = 1; y <= SQUARE_SIZE; y++)
     {
-        for (int x = 1; x < SQUARE_SIZE; x++)
+        for (int x = 1; x <= SQUARE_SIZE; x++)
         {
             if (is_valid(x, y, current_turn, board))
             {
@@ -96,9 +96,9 @@ int negamax(Pos* next_move, Disk self_disk, Disk current_turn, int depth, Board*
     // 子ノードの評価値
     int child_score = INT_MIN;
 
-    for (int y = 1; y < SQUARE_SIZE; y++)
+    for (int y = 1; y <= SQUARE_SIZE; y++)
     {
-        for (int x = 1; x < SQUARE_SIZE; x++)
+        for (int x = 1; x <= SQUARE_SIZE; x++)
         {
             if (is_valid(x, y, current_turn, board))
             {

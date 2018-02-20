@@ -13,27 +13,21 @@ int main()
     // 盤面
     Board board;
 
-    srand((unsigned)time(NULL));
-
     init_board(&board);
 
     // ゲーム状態
     State state;
 
-    // ターン数
-    int turn = 1;
-
     while ((state = get_state(&board)) != FINISH)
     {
         print_board(&board);
 
-        printf("[%d] ", turn);
+        printf("[%d] ", board.turn);
 
         switch(state)
         {
             case DO_TURN:
                 input(&board);
-                turn++;
                 break;
             default:
                 printf("Pass\n");
@@ -51,17 +45,18 @@ void input(Board* board)
 {
     if (board->current_turn == BLACK)
     {
-        char input[2];
         int x, y;
 
-        printf("Black >> ");
+        printf("Black(@) >> ");
 
         while (true)
         {
-            // 入力した文字を1~8の(x, y)座標に変換
+            char input[2];
             fgets(input, 3, stdin);
-            x = tolower(input[0]) - '`';
-            y = input[1] - '0';
+            // 入力した文字を座標値（1～8）に変換
+            x = tolower(input[0]) - 0x60;
+            y = input[1] - 0x30;
+
             fflush(stdin);
 
             // 石の設置判定
@@ -69,17 +64,15 @@ void input(Board* board)
             {
                 break;
             }
-            else
-            {
-                printf("Cannot put here: input again >> ");
-            }
+            
+            printf("Cannot put here: input again >> ");
         }
 
         put_and_flip(TO_POS(x, y), board->current_turn, board);
     }
     else
     {
-        printf("White >> ");
+        printf("White(O) >> ");
 
         Pos move;
 
@@ -88,7 +81,7 @@ void input(Board* board)
         negamax(&move, board->current_turn, board->current_turn, 5, board);
 
         // プレイヤーと同様に入力座標を表示
-        printf("%c%c\n", TO_X(move) + '`', TO_Y(move) + '0');
+        printf("%c%c\n", TO_X(move) + 0x60, TO_Y(move) + 0x30);
 
         put_and_flip(move, board->current_turn, board);
     }

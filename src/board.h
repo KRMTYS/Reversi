@@ -3,30 +3,37 @@
 
 #include <stdbool.h>
 
-// 番兵含む盤面の幅
-#define SQUARE_SIZE 9
-// 番兵含む盤面長
+// 盤面の幅
+#define SQUARE_SIZE 8
+// 盤面長（番兵含む）
 #define SQUARE_LENGTH 91
 
 // 座標インデックスへの変換
-#define TO_POS(x, y) (y * SQUARE_SIZE + x)
+#define TO_POS(x, y) (y * (SQUARE_SIZE + 1) + x)
 
 // (x, y)への変換
-#define TO_X(p) (p%SQUARE_SIZE)
-#define TO_Y(p) ((int)(p/SQUARE_SIZE))
+#define TO_X(p) (p % (SQUARE_SIZE + 1))
+#define TO_Y(p) ((int)(p / (SQUARE_SIZE + 1)))
 
 // 逆の色を返す
 #define REVERSE(c) (-1 * c)
 
 // スタック長、適当
-#define STACK_LENGTH 1000
+#define STACK_LENGTH 60 * 20
 
-// 石
+// 盤面として表示する文字列
+#define BLACK_STR "@ "
+#define WHITE_STR "O "
+#define VALID_STR "* "
+#define EMPTY_STR "- "
+
+// 石とマスの状態
 typedef enum
 {
     WHITE = -1, // 白石
     EMPTY =  0, // 空
-    BLACK =  1  // 黒石
+    BLACK =  1, // 黒石
+    WALL        // 壁
 }
 Disk;
 
@@ -74,6 +81,11 @@ typedef struct
     Disk square[SQUARE_LENGTH];
     // 手番
     Disk current_turn;
+    // ターン数
+    int turn;
+    // 石数
+    // 黒：[0]、白：[1]
+    int disk_count[2];
     // 手番を記録するスタック
     // (返した石の位置1), ... , (返した石の数), (置いた石の位置)
     // の順に記録される
@@ -92,6 +104,7 @@ bool is_on_board(int, int);
 bool is_empty(int, int, Board*);
 // 有効手か
 bool is_valid(int, int, Disk, Board*);
+
 // 有効手を持つか
 bool has_valid_move(Disk, Board*);
 
