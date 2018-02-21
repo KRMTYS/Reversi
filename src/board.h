@@ -16,7 +16,7 @@
 #define TO_Y(p) ((int)(p / (SQUARE_SIZE + 1)))
 
 // 逆の色を返す
-#define REVERSE(c) (-1 * c)
+#define OPPONENT(c) (-1 * c)
 
 // スタック長、適当
 #define STACK_LENGTH 60 * 20
@@ -85,7 +85,7 @@ typedef struct
     int turn;
     // 石数
     // 黒：[0]、白：[1]
-    int disk_count[2];
+    int disk_num[2];
     // 手番を記録するスタック
     // (返した石の位置1), ... , (返した石の数), (置いた石の位置)
     // の順に記録される
@@ -108,6 +108,11 @@ bool is_valid(int, int, Disk, Board*);
 // 有効手を持つか
 bool has_valid_move(Disk, Board*);
 
+// パス判定
+bool is_passed(Board*);
+// 終了判定
+bool is_finished(Board*);
+
 // パス/終了判定
 State get_state(Board*);
 
@@ -116,8 +121,15 @@ int count_flip_disks_line(Pos, Disk, Dir, Board*);
 // ある座標に置くとき返せる石数を調べる
 int count_flip_disks(Pos, Disk, Board*);
 
-// 盤上の石を数える
+// 石数の更新
+void renew_disk_nums(int, Board*);
+
+// 石数を返す
 int count_disks(Disk, Board*);
+
+// 手番の変更
+void next_turn(Board*);
+void back_turn(Board*);
 
 // 一方向への石の反転
 int flip_line(Pos, Disk, Dir, Board*);
@@ -131,7 +143,7 @@ void undo(Board*);
 void print_board(Board*);
 
 // 勝敗判定
-void judge(Board*);
+Disk judge(Board*);
 
 // スタック操作
 void push(int n, Board*);

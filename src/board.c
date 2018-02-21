@@ -22,12 +22,13 @@ void init_board(Board* board)
     board->square[E4] = BLACK;
     board->square[E5] = WHITE;
 
+    // 黒先攻
     board->current_turn = BLACK;
 
     board->turn = 1;
 
-    board->disk_count[0] = 2;
-    board->disk_count[1] = 2;
+    board->disk_num[0] = 2;
+    board->disk_num[1] = 2;
 
     // スタックの初期化
     for (int i = 0; i < STACK_LENGTH; i++)
@@ -40,12 +41,12 @@ void init_board(Board* board)
 
 bool is_on_board(int x, int y)
 {
-    return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE)) ? true : false;
+    return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE));
 }
 
 bool is_empty(int x, int y, Board* board)
 {
-    return (board->square[TO_POS(x, y)] == EMPTY) ? true : false;
+    return (board->square[TO_POS(x, y)] == EMPTY);
 }
 
 bool is_valid(int x, int y, Disk disk, Board* board)
@@ -55,24 +56,40 @@ bool is_valid(int x, int y, Disk disk, Board* board)
         return false;
     }
 
-    if (count_flip_disks(TO_POS(x, y), disk, board) > 0)
-    {
-        return true;
-    }
-    
-    return false;
+    return (count_flip_disks(TO_POS(x, y), disk, board) > 0);
 }
 
 bool has_valid_move(Disk disk, Board* board)
 {
-    if (disk == BLACK)
+    for (int y = 1; y <= SQUARE_SIZE; y++)
     {
-        return (board->disk_count[0] > 0) ? true : false;
+        for (int x = 1; x <= SQUARE_SIZE; x++)
+        {
+            if (count_flip_disks(TO_POS(x, y), disk, board) > 0)
+            {
+                return true;
+            }
+        }
     }
-    else
+
+    return false;
+}
+
+bool is_passed(Board* board)
+{
+    if (!has_valid_move(board->current_turn, board))
     {
-        return (board->disk_count[1] > 0) ? true : false;
+        next_turn(board);
+
+        return true;
     }
+
+    return false;
+}
+
+bool is_finished(Board* board)
+{
+    return !(has_valid_move(BLACK, board) && has_valid_move(WHITE, board));
 }
 
 State get_state(Board* board)
@@ -83,11 +100,9 @@ State get_state(Board* board)
     {
         return DO_TURN;
     }
-    else if (has_valid_move(REVERSE(current), board))
+    else if (has_valid_move(OPPONENT(current), board))
     {
-        // 手番変更
-        board->current_turn = REVERSE(board->current_turn);
-        board->turn++;
+        next_turn(board);
         return PASS;
     }
 
@@ -102,8 +117,7 @@ int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board* board)
     for (int i = pos + dir; board->square[i] != disk ; i += dir)
     {
         // 空き/壁があるとき返せない
-        if ((board->square[i] == EMPTY)
-            || (board->square[i] == WALL))
+        if ((board->square[i] == EMPTY) || (board->square[i] == WALL))
         {
             return 0;
         }
@@ -130,9 +144,51 @@ int count_flip_disks(Pos pos, Disk disk, Board* board)
     return count;
 }
 
+void renew_disk_nums(int n, Board* board)
+{
+    if (n > 0)
+    {
+        if (board->current_turn == BLACK)
+        {
+            board->disk_num[0] += (n + 1);
+            board->disk_num[1] -= n;
+        }
+        else
+        {
+            board->disk_num[0] -= n;
+            board->disk_num[1] += (n + 1);
+        }
+    }
+    else
+    {
+        if (board->current_turn == BLACK)
+        {
+            board->disk_num[0] += (n - 1);
+            board->disk_num[1] -= n;
+        }
+        else
+        {
+            board->disk_num[0] -= n;
+            board->disk_num[1] += (n - 1);
+        }
+    }
+}
+
 int count_disks(Disk disk, Board* board)
 {
-    return (disk == BLACK) ? board->disk_count[0] : board->disk_count[1];
+    return (disk == BLACK) ? board->disk_num[0] : board->disk_num[1];
+}
+
+void next_turn(Board* board)
+{
+    board->current_turn = OPPONENT(board->current_turn);
+    board->turn++;
+}
+
+void back_turn(Board* board)
+{
+    board->current_turn = OPPONENT(board->current_turn);
+    board->turn--;
 }
 
 int flip_line(Pos pos, Disk disk, Dir dir, Board* board)
@@ -144,8 +200,7 @@ int flip_line(Pos pos, Disk disk, Dir dir, Board* board)
     for (n = pos + dir; board->square[n] != disk ; n += dir)
     {
         // 空き/壁があるとき返せない
-        if ((board->square[n] == EMPTY)
-            || (board->square[n] == WALL))
+        if ((board->square[n] == EMPTY) || (board->square[n] == WALL))
         {
             return 0;
         }
@@ -182,24 +237,11 @@ int put_and_flip(Pos pos, Disk disk, Board* board)
     board->square[pos] = disk;
 
     push(count, board);
-
     push(pos, board);
 
-    // 手番変更
-    board->current_turn = REVERSE(board->current_turn);
-    board->turn++;
+    renew_disk_nums(count, board);
 
-    // 石数更新
-    if (disk == BLACK)
-    {
-        board->disk_count[0] += (count + 1);
-        board->disk_count[1] -= count;
-    }
-    else
-    {
-        board->disk_count[0] -= count;
-        board->disk_count[1] += (count + 1);
-    }
+    next_turn(board);
 
     return count;
 }
@@ -215,20 +257,9 @@ void undo(Board* board)
         board->square[pop(board)] *= -1;
     }
 
-    board->current_turn = REVERSE(board->current_turn);
-    board->turn--;
+    back_turn(board);
 
-    // 石数更新
-    if (board->current_turn == BLACK)
-    {
-        board->disk_count[0] -= (n + 1);
-        board->disk_count[1] += n;
-    }
-    else
-    {
-        board->disk_count[0] += n;
-        board->disk_count[1] -= (n + 1);
-    }
+    renew_disk_nums(-n, board);
 }
 
 void print_board(Board* board)
@@ -270,27 +301,19 @@ void print_board(Board* board)
     printf("@:%2d O:%2d\n", count_disks(BLACK, board), count_disks(WHITE, board));
 }
 
-void judge(Board* board)
+Disk judge(Board* board)
 {
-    int num_black = count_disks(BLACK, board);
-    int num_white = count_disks(WHITE, board);
-
-    printf("\n***********\n");
-    printf("Black : %2d\n", num_black);
-    printf("White : %2d\n", num_white);
-    printf("***********\n");
-
-    if (num_black > num_white)
+    if (board->disk_num[0] > board->disk_num[1])
     {
-        printf("\n* Black Wins *\n\n");
+        return BLACK;
     }
-    else if (num_black < num_white)
+    else if (board->disk_num[0] < board->disk_num[1])
     {
-        printf("\n* White Wins *\n\n");
+        return WHITE;
     }
     else
     {
-        printf("\n* Draw *\n\n");
+        return EMPTY;
     }
 }
 
