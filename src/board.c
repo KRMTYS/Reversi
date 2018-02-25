@@ -6,7 +6,14 @@ void init_board(Board* board)
 {
     for (int i = 0; i < SQUARE_LENGTH; i++)
     {
-        board->square[i] = EMPTY;
+        if (is_on_board(TO_X(i), TO_Y(i)))
+        {
+            board->square[i] = EMPTY;
+        }
+        else
+        {
+            board->square[i] = WALL;
+        }
     }
 
     // 石の初期配置
@@ -28,7 +35,7 @@ void init_board(Board* board)
 
 bool is_on_board(int x, int y)
 {
-    return ((x >= 1) && (x < SQUARE_SIZE) && (y >= 1) && (y < SQUARE_SIZE)) ? true : false;
+    return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE)) ? true : false;
 }
 
 bool is_empty(int x, int y, Board* board)
@@ -53,9 +60,9 @@ bool is_valid(int x, int y, Disk disk, Board* board)
 
 bool has_valid_move(Disk disk, Board* board)
 {
-    for (int y = 1; y < SQUARE_SIZE; y++)
+    for (int y = 1; y <= SQUARE_SIZE; y++)
     {
-        for(int x = 1; x < SQUARE_SIZE; x++)
+        for(int x = 1; x <= SQUARE_SIZE; x++)
         {
             Pos pos = TO_POS(x, y);
 
@@ -81,10 +88,10 @@ State get_state(Board* board)
     {
         return DO_TURN;
     }
-    else if (has_valid_move(-1 * current, board))
+    else if (has_valid_move(OPPONENT(current), board))
     {
         // 手番変更
-        board->current_turn = REVERSE(board->current_turn);
+        board->current_turn = OPPONENT(board->current_turn);
         return PASS;
     }
 
@@ -98,8 +105,7 @@ int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board* board)
     // 同色石まで探索
     for (int i = pos + dir; board->square[i] != disk ; i += dir)
     {
-        // 空きまで探索
-        if (board->square[i] == EMPTY)
+        if (board->square[i] == EMPTY || board->square[i] == WALL)
         {
             return 0;
         }
@@ -130,9 +136,9 @@ int count_disks(Disk disk, Board* board)
 {
     int count = 0;
 
-    for (int y = 1; y < SQUARE_SIZE; y++)
+    for (int y = 1; y <= SQUARE_SIZE; y++)
     {
-        for (int x = 1; x < SQUARE_SIZE; x++)
+        for (int x = 1; x <= SQUARE_SIZE; x++)
         {
             if (board->square[TO_POS(x, y)] == disk)
             {
@@ -152,8 +158,8 @@ int flip_line(Pos pos, Disk disk, Dir dir, Board* board)
     // 同色石まで探索
     for (n = pos + dir; board->square[n] != disk ; n += dir)
     {
-        // 空きがあれば返せない
-        if (board->square[n] == EMPTY)
+        // 空き/壁のとき返す石なし
+        if (board->square[n] == EMPTY || board->square[n] == WALL)
         {
             return 0;
         }
@@ -193,7 +199,7 @@ int put_and_flip(Pos pos, Disk disk, Board* board)
 
     push(pos, board);
 
-    board->current_turn = REVERSE(board->current_turn);
+    board->current_turn = OPPONENT(board->current_turn);
 
     return count;
 }
@@ -209,7 +215,7 @@ void undo(Board* board)
         board->square[pop(board)] *= -1;
     }
 
-    board->current_turn = REVERSE(board->current_turn);
+    board->current_turn = OPPONENT(board->current_turn);
 }
 
 void print_board(Board* board)
@@ -217,28 +223,28 @@ void print_board(Board* board)
     printf("    a b c d e f g h \n");
     printf("  +-----------------+\n");
 
-    for (int y = 1; y < SQUARE_SIZE; y++)
+    for (int y = 1; y <= SQUARE_SIZE; y++)
     {
         printf("%d | ", y);
 
-        for (int x = 1; x < SQUARE_SIZE; x++)
+        for (int x = 1; x <= SQUARE_SIZE; x++)
         {
             switch (board->square[TO_POS(x, y)])
             {
                 case WHITE:
-                    printf("O ");
+                    printf(WHITE_STR);
                     break;
                 case BLACK:
-                    printf("@ ");
+                    printf(BLACK_STR);
                     break;
                 default:
                     if (is_valid(x, y, board->current_turn, board))
                     {
-                        printf("* ");
+                        printf(VALID_STR);
                     }
                     else
                     {
-                        printf("- ");
+                        printf(EMPTY_STR);
                     }
                     break;
             }
@@ -249,27 +255,22 @@ void print_board(Board* board)
     printf("  +-----------------+\n");
 }
 
-void judge(Board* board)
+Disk judge(Board* board)
 {
     int num_black = count_disks(BLACK, board);
     int num_white = count_disks(WHITE, board);
 
-    printf("\n***********\n");
-    printf("Black : %2d\n", num_black);
-    printf("White : %2d\n", num_white);
-    printf("***********\n");
-
     if (num_black > num_white)
     {
-        printf("\n* Black Wins *\n\n");
+        return BLACK;
     }
     else if (num_black < num_white)
     {
-        printf("\n* White Wins *\n\n");
+        return WHITE;
     }
     else
     {
-        printf("\n* Draw *\n\n");
+        return EMPTY;
     }
 }
 

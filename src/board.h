@@ -3,30 +3,37 @@
 
 #include <stdbool.h>
 
-// 番兵含む盤面の幅
-#define SQUARE_SIZE 9
-// 番兵含む盤面長
+// 盤面の幅
+#define SQUARE_SIZE 8
+// 盤面長、番兵含む
 #define SQUARE_LENGTH 91
 
 // 座標インデックスへの変換
-#define TO_POS(x, y) (y * SQUARE_SIZE + x)
+#define TO_POS(x, y) (y * (SQUARE_SIZE + 1) + x)
 
-// (x, y)への変換
-#define TO_X(p) (p%SQUARE_SIZE)
-#define TO_Y(p) ((int)(p/SQUARE_SIZE))
+// x-y座標への変換
+#define TO_X(p) (p % (SQUARE_SIZE + 1))
+#define TO_Y(p) ((int)(p / (SQUARE_SIZE + 1)))
 
 // 逆の色を返す
-#define REVERSE(c) (-1 * c)
+#define OPPONENT(c) (-1 * c)
 
-// スタック長、適当
-#define STACK_LENGTH 1000
+// スタック長
+#define STACK_LENGTH 60 * 20
+
+// 盤面として表示する文字列
+#define BLACK_STR "@ "
+#define WHITE_STR "O "
+#define VALID_STR "* "
+#define EMPTY_STR "- "
 
 // 石
 typedef enum
 {
     WHITE = -1, // 白石
     EMPTY =  0, // 空
-    BLACK =  1  // 黒石
+    BLACK =  1, // 黒石
+    WALL  =  2  // 壁
 }
 Disk;
 
@@ -118,7 +125,7 @@ void undo(Board*);
 void print_board(Board*);
 
 // 勝敗判定
-void judge(Board*);
+Disk judge(Board*);
 
 // スタック操作
 void push(int n, Board*);

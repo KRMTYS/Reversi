@@ -1,60 +1,133 @@
 #include <stdio.h>
-#include <ctype.h>
 #include <stdlib.h>
-#include <time.h>
+#include <ctype.h>
 
 #include "board.h"
 #include "evaluation.h"
 
-void input(Board*);
+#define SEARCH_LEVEL 5
+
+typedef enum
+{
+    PLAYER, // プレイヤー 
+    COM     // COM
+}
+Operator;
+
+void select_player(Operator*);
+void input(Board*, Operator*);
 
 int main()
 {
     // 盤面
     Board board;
 
-    srand((unsigned)time(NULL));
-
     init_board(&board);
 
-    // ゲーム状態
-    State state;
+    Operator op[2];
+
+    select_player(op);
 
     // ターン数
     int turn = 1;
 
-    while ((state = get_state(&board)) != FINISH)
+    while (true)
     {
         print_board(&board);
 
-        printf("[%d] ", turn);
+        State state = get_state(&board);
 
-        switch(state)
+        if (state == DO_TURN)
         {
-            case DO_TURN:
-                input(&board);
-                turn++;
-                break;
-            default:
-                printf("Pass\n");
-                break;
+            printf("[%d] ", turn);
+            input(&board, op);
+            turn++;
+        }
+        else if (state == PASS)
+        {
+            printf("Pass\n");
+        }
+        else
+        {
+            printf("Finish\n\n");
+            break;
         }
     }
 
-    judge(&board);
+    switch (judge(&board))
+    {
+        case BLACK:
+            printf("* Black Wins *\n");
+            break;
+        case WHITE:
+            printf("* White Wins *\n");
+            break;
+        default:
+            printf("* Draw *\n");
+            break;
+    }
 
     return 0;
 }
 
-// 入力
-void input(Board* board)
+// プレイヤー選択
+void select_player(Operator* op)
 {
+    printf("Select your turn\n");
+    printf("1: Black 2: White 3: Auto\n");
+
+    while (true)
+    {
+        printf(">> ");
+
+        char input;
+
+        fgets(&input, 2, stdin);
+        fflush(stdin);
+
+        int n = atoi(&input);
+
+        if (n == 1)
+        {
+            op[0] = PLAYER;
+            op[1] = COM;
+            break;
+        }
+        else if (n == 2)
+        {
+            op[0] = COM;
+            op[1] = PLAYER;
+            break;
+        }
+        else if (n == 3)
+        {
+            op[0] = COM;
+            op[1] = COM;
+            break;
+        }
+    }
+}
+
+// 入力
+void input(Board* board, Operator* op)
+{
+    int index;
+
     if (board->current_turn == BLACK)
+    {
+        printf("Black(@) >> ");
+        index = 0;
+    }
+    else
+    {
+        printf("White(O) >> ");
+        index = 1;
+    }
+
+    if (op[index] == PLAYER)
     {
         char input[2];
         int x, y;
-
-        printf("Black >> ");
 
         while (true)
         {
@@ -79,19 +152,73 @@ void input(Board* board)
     }
     else
     {
-        printf("White >> ");
-
         Pos move;
 
         // negamax法での先読み評価
         // 5手先まで
-        negamax(&move, board->current_turn, board->current_turn, 5, board);
+        negamax(&move, board->current_turn, board->current_turn, SEARCH_LEVEL, board);
 
         // プレイヤーと同様に入力座標を表示
         printf("%c%c\n", TO_X(move) + '`', TO_Y(move) + '0');
 
         put_and_flip(move, board->current_turn, board);
     }
+
+    // if (board->current_turn == BLACK)
+    // {
+    //     printf("Black(@) >> ");
+
+    //     Pos move;
+
+    //     // negamax法での先読み評価
+    //     // 5手先まで
+    //     negamax(&move, board->current_turn, board->current_turn, SEARCH_LEVEL, board);
+
+    //     // プレイヤーと同様に入力座標を表示
+    //     printf("%c%c\n", TO_X(move) + '`', TO_Y(move) + '0');
+
+    //     put_and_flip(move, board->current_turn, board);
+
+
+    //     // char input[2];
+    //     // int x, y;
+
+    //     // while (true)
+    //     // {
+    //     //     // 入力した文字を1~8の(x, y)座標に変換
+    //     //     fgets(input, 3, stdin);
+    //     //     x = tolower(input[0]) - '`';
+    //     //     y = input[1] - '0';
+    //     //     fflush(stdin);
+
+    //     //     // 石の設置判定
+    //     //     if (is_valid(x, y, board->current_turn, board))
+    //     //     {
+    //     //         break;
+    //     //     }
+    //     //     else
+    //     //     {
+    //     //         printf("Cannot put here: input again >> ");
+    //     //     }
+    //     // }
+
+    //     // put_and_flip(TO_POS(x, y), board->current_turn, board);
+    // }
+    // else
+    // {
+    //     printf("White(O) >> ");
+
+    //     Pos move;
+
+    //     // negamax法での先読み評価
+    //     // 5手先まで
+    //     negamax(&move, board->current_turn, board->current_turn, SEARCH_LEVEL, board);
+
+    //     // プレイヤーと同様に入力座標を表示
+    //     printf("%c%c\n", TO_X(move) + '`', TO_Y(move) + '0');
+
+    //     put_and_flip(move, board->current_turn, board);
+    // }
 
     printf("\n");
 }
