@@ -6,7 +6,7 @@
 // 評価関数
 int evaluate(Disk, Board*);
 
-// NegaMax法による探索
-int negamax(Pos*, Disk, Disk, int, Board*);
+// NegaAlpha法による探索
+int negaalpha(Pos*, Disk, Disk, int, int, int, Board*);
 
 #endif

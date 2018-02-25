@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "board.h"
 #include "evaluation.h"
@@ -163,8 +164,14 @@ void input(Board* board, Operator* op)
     {
         Pos move;
 
-        // negamax法での探索
-        negamax(&move, board->current_turn, board->current_turn, SEARCH_LEVEL, board);
+        // negaalpha法での探索
+        negaalpha(&move,
+                  board->current_turn,
+                  board->current_turn,
+                  -INT_MAX,
+                  INT_MAX,
+                  SEARCH_LEVEL,
+                  board);
 
         // プレイヤーと同様に入力座標を表示
         printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));

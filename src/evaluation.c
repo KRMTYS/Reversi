@@ -10,7 +10,13 @@ int evaluate(Disk disk, Board* board)
     return diff_disk;
 }
 
-int negamax(Pos* next_move, Disk self_disk, Disk current_turn, int depth, Board* board)
+int negaalpha(Pos* next_move,
+            Disk self_disk,
+            Disk current_turn,
+            int alpha,
+            int beta,
+            int depth,
+            Board* board)
 {
     if (depth == 0)
     {
@@ -29,9 +35,6 @@ int negamax(Pos* next_move, Disk self_disk, Disk current_turn, int depth, Board*
 
     bool had_valid_move = false;
 
-    // 最大評価値
-    int best_score = -INT_MAX;
-
     for (int i = 0; i < SQUARE_LENGTH; i++)
     {
         if (is_valid(TO_X(i), TO_Y(i), current_turn, board))
@@ -40,15 +43,27 @@ int negamax(Pos* next_move, Disk self_disk, Disk current_turn, int depth, Board*
 
             had_valid_move = true;
 
-            int score = -negamax(next_move, self_disk, OPPONENT(current_turn), depth - 1, board);
-
-            if (score > best_score)
-            {
-                best_score = score;
-                move = i;
-            }
+            int score = -negaalpha(next_move,
+                                   self_disk,
+                                   OPPONENT(current_turn),
+                                   -beta,
+                                   -alpha,
+                                   depth - 1,
+                                   board);
 
             undo(board);
+
+            if (score > alpha)
+            {
+                alpha = score;
+                move = i;
+
+                // betaカット
+                if (alpha >= beta)
+                {
+                    return beta;
+                }
+            }
         }
     }
 
@@ -58,16 +73,22 @@ int negamax(Pos* next_move, Disk self_disk, Disk current_turn, int depth, Board*
         // ゲーム終了のとき評価値を返す
         if (!has_valid_move(OPPONENT(current_turn), board))
         {
-            best_score = evaluate(current_turn, board);
+            alpha = evaluate(current_turn, board);
         }
         else
         {
             // パスのとき手番を次に回す
-            best_score = -negamax(next_move, self_disk, OPPONENT(current_turn), depth - 1, board);
+            alpha = -negaalpha(next_move,
+                               self_disk,
+                               OPPONENT(current_turn),
+                               -beta,
+                               -alpha,
+                               depth - 1,
+                               board);
         }
     }
 
     *next_move = move;
 
-    return best_score;
+    return alpha;
 }
