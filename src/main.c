@@ -5,8 +5,16 @@
 #include "board.h"
 #include "evaluation.h"
 
+// 探索レベル
 #define SEARCH_LEVEL 5
 
+// 座標値-文字間変換
+#define TO_INT_X(c) (c - 0x60)
+#define TO_INT_Y(c) (c - 0x30)
+#define TO_CHAR_X(x) (x + 0x60)
+#define TO_CHAR_Y(y) (y + 0x30)
+
+// 操作者
 typedef enum
 {
     PLAYER, // プレイヤー 
@@ -24,6 +32,7 @@ int main()
 
     init_board(&board);
 
+    // 順に黒番、白番
     Operator op[2];
 
     select_player(op);
@@ -74,7 +83,7 @@ int main()
 void select_player(Operator* op)
 {
     printf("Select your turn\n");
-    printf("1: Black 2: White 3: Auto\n");
+    printf("1: Black 2: White 3: None (COM vs COM)\n");
 
     while (true)
     {
@@ -133,8 +142,8 @@ void input(Board* board, Operator* op)
         {
             // 入力した文字を1~8の(x, y)座標に変換
             fgets(input, 3, stdin);
-            x = tolower(input[0]) - '`';
-            y = input[1] - '0';
+            x = TO_INT_X(tolower(input[0]));
+            y = TO_INT_Y(input[1]);
             fflush(stdin);
 
             // 石の設置判定
@@ -147,6 +156,8 @@ void input(Board* board, Operator* op)
                 printf("Cannot put here: input again >> ");
             }
         }
+
+        put_and_flip(TO_POS(x, y), board->current_turn, board);
     }
     else
     {
@@ -156,7 +167,7 @@ void input(Board* board, Operator* op)
         negamax(&move, board->current_turn, board->current_turn, SEARCH_LEVEL, board);
 
         // プレイヤーと同様に入力座標を表示
-        printf("%c%c\n", TO_X(move) + 0x60, TO_Y(move) + 0x30);
+        printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));
 
         put_and_flip(move, board->current_turn, board);
     }
