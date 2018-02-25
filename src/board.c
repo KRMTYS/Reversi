@@ -25,11 +25,6 @@ void init_board(Board* board)
     // 黒先攻
     board->current_turn = BLACK;
 
-    board->turn = 1;
-
-    board->disk_num[0] = 2;
-    board->disk_num[1] = 2;
-
     // スタックの初期化
     for (int i = 0; i < STACK_LENGTH; i++)
     {
@@ -41,12 +36,12 @@ void init_board(Board* board)
 
 bool is_on_board(int x, int y)
 {
-    return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE));
+    return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE)) ? true : false;
 }
 
 bool is_empty(int x, int y, Board* board)
 {
-    return (board->square[TO_POS(x, y)] == EMPTY);
+    return (board->square[TO_POS(x, y)] == EMPTY) ? true : false;
 }
 
 bool is_valid(int x, int y, Disk disk, Board* board)
@@ -56,40 +51,25 @@ bool is_valid(int x, int y, Disk disk, Board* board)
         return false;
     }
 
-    return (count_flip_disks(TO_POS(x, y), disk, board) > 0);
-}
-
-bool has_valid_move(Disk disk, Board* board)
-{
-    for (int y = 1; y <= SQUARE_SIZE; y++)
+    if (count_flip_disks(TO_POS(x, y), disk, board) > 0)
     {
-        for (int x = 1; x <= SQUARE_SIZE; x++)
-        {
-            if (count_flip_disks(TO_POS(x, y), disk, board) > 0)
-            {
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-bool is_passed(Board* board)
-{
-    if (!has_valid_move(board->current_turn, board))
-    {
-        next_turn(board);
-
         return true;
     }
 
     return false;
 }
 
-bool is_finished(Board* board)
+bool has_valid_move(Disk disk, Board* board)
 {
-    return !(has_valid_move(BLACK, board) && has_valid_move(WHITE, board));
+    for (int i = 0; i < SQUARE_LENGTH; i++)
+    {
+        if (is_valid(TO_X(i), TO_Y(i), disk, board))
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 State get_state(Board* board)
@@ -102,7 +82,8 @@ State get_state(Board* board)
     }
     else if (has_valid_move(OPPONENT(current), board))
     {
-        next_turn(board);
+        // 手番変更
+        board->current_turn = OPPONENT(board->current_turn);
         return PASS;
     }
 
@@ -131,7 +112,7 @@ int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board* board)
 int count_flip_disks(Pos pos, Disk disk, Board* board)
 {
     int count = 0;
-    
+
     count += count_flip_disks_line(pos, disk, UPPER, board);
     count += count_flip_disks_line(pos, disk, UPPER_RIGHT, board);
     count += count_flip_disks_line(pos, disk, UPPER_LEFT, board);
@@ -144,51 +125,19 @@ int count_flip_disks(Pos pos, Disk disk, Board* board)
     return count;
 }
 
-void renew_disk_nums(int n, Board* board)
-{
-    if (n > 0)
-    {
-        if (board->current_turn == BLACK)
-        {
-            board->disk_num[0] += (n + 1);
-            board->disk_num[1] -= n;
-        }
-        else
-        {
-            board->disk_num[0] -= n;
-            board->disk_num[1] += (n + 1);
-        }
-    }
-    else
-    {
-        if (board->current_turn == BLACK)
-        {
-            board->disk_num[0] += (n - 1);
-            board->disk_num[1] -= n;
-        }
-        else
-        {
-            board->disk_num[0] -= n;
-            board->disk_num[1] += (n - 1);
-        }
-    }
-}
-
 int count_disks(Disk disk, Board* board)
 {
-    return (disk == BLACK) ? board->disk_num[0] : board->disk_num[1];
-}
+    int count = 0;
 
-void next_turn(Board* board)
-{
-    board->current_turn = OPPONENT(board->current_turn);
-    board->turn++;
-}
+    for (int i = 0; i < SQUARE_LENGTH; i++)
+    {
+        if (board->square[i] == disk)
+        {
+            count++;
+        }
+    }
 
-void back_turn(Board* board)
-{
-    board->current_turn = OPPONENT(board->current_turn);
-    board->turn--;
+    return count;
 }
 
 int flip_line(Pos pos, Disk disk, Dir dir, Board* board)
@@ -239,9 +188,7 @@ int put_and_flip(Pos pos, Disk disk, Board* board)
     push(count, board);
     push(pos, board);
 
-    renew_disk_nums(count, board);
-
-    next_turn(board);
+    board->current_turn = OPPONENT(board->current_turn);
 
     return count;
 }
@@ -257,9 +204,7 @@ void undo(Board* board)
         board->square[pop(board)] *= -1;
     }
 
-    back_turn(board);
-
-    renew_disk_nums(-n, board);
+    board->current_turn = OPPONENT(board->current_turn);
 }
 
 void print_board(Board* board)
@@ -303,11 +248,14 @@ void print_board(Board* board)
 
 Disk judge(Board* board)
 {
-    if (board->disk_num[0] > board->disk_num[1])
+    int num_black = count_disks(BLACK, board);
+    int num_white = count_disks(WHITE, board);
+
+    if (num_black > num_white)
     {
         return BLACK;
     }
-    else if (board->disk_num[0] < board->disk_num[1])
+    else if (num_black < num_white)
     {
         return WHITE;
     }

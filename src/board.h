@@ -11,7 +11,7 @@
 // 座標インデックスへの変換
 #define TO_POS(x, y) (y * (SQUARE_SIZE + 1) + x)
 
-// (x, y)への変換
+// x-y座標への変換
 #define TO_X(p) (p % (SQUARE_SIZE + 1))
 #define TO_Y(p) ((int)(p / (SQUARE_SIZE + 1)))
 
@@ -33,7 +33,7 @@ typedef enum
     WHITE = -1, // 白石
     EMPTY =  0, // 空
     BLACK =  1, // 黒石
-    WALL        // 壁
+    WALL  =  2  // 壁
 }
 Disk;
 
@@ -81,11 +81,6 @@ typedef struct
     Disk square[SQUARE_LENGTH];
     // 手番
     Disk current_turn;
-    // ターン数
-    int turn;
-    // 石数
-    // 黒：[0]、白：[1]
-    int disk_num[2];
     // 手番を記録するスタック
     // (返した石の位置1), ... , (返した石の数), (置いた石の位置)
     // の順に記録される
@@ -108,11 +103,6 @@ bool is_valid(int, int, Disk, Board*);
 // 有効手を持つか
 bool has_valid_move(Disk, Board*);
 
-// パス判定
-bool is_passed(Board*);
-// 終了判定
-bool is_finished(Board*);
-
 // パス/終了判定
 State get_state(Board*);
 
@@ -121,15 +111,8 @@ int count_flip_disks_line(Pos, Disk, Dir, Board*);
 // ある座標に置くとき返せる石数を調べる
 int count_flip_disks(Pos, Disk, Board*);
 
-// 石数の更新
-void renew_disk_nums(int, Board*);
-
 // 石数を返す
 int count_disks(Disk, Board*);
-
-// 手番の変更
-void next_turn(Board*);
-void back_turn(Board*);
 
 // 一方向への石の反転
 int flip_line(Pos, Disk, Dir, Board*);

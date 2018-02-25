@@ -4,8 +4,10 @@
 
 int evaluate(Disk disk, Board* board)
 {
-    // 石差
-    return count_disks(disk, board) - count_disks(OPPONENT(disk), board);
+    // 石数の差
+    int diff_disk = count_disks(disk, board) - count_disks(OPPONENT(disk), board);
+
+    return diff_disk;
 }
 
 int negamax(Pos* next_move, Disk self_disk, Disk current_turn, int depth, Board* board)
@@ -24,47 +26,43 @@ int negamax(Pos* next_move, Disk self_disk, Disk current_turn, int depth, Board*
     }
 
     Pos move;
+
     bool had_valid_move = false;
 
-    // 最大の評価値
+    // 最大評価値
     int best_score = -INT_MAX;
 
-    for (int y = 1; y <= SQUARE_SIZE; y++)
+    for (int i = 0; i < SQUARE_LENGTH; i++)
     {
-        for (int x = 1; x <= SQUARE_SIZE; x++)
+        if (is_valid(TO_X(i), TO_Y(i), current_turn, board))
         {
-            if (is_valid(x, y, current_turn, board))
+            put_and_flip(i, current_turn, board);
+
+            had_valid_move = true;
+
+            int score = -negamax(next_move, self_disk, OPPONENT(current_turn), depth - 1, board);
+
+            if (score > best_score)
             {
-                move = TO_POS(x, y);
-                had_valid_move = true;
-
-                put_and_flip(TO_POS(x, y), current_turn, board);
-
-                int score = -negamax(next_move, self_disk, OPPONENT(current_turn), depth - 1, board);
-
-                if (score > best_score)
-                {
-                    best_score = score;
-                    move = TO_POS(x, y);
-                }
-
-                undo(board);
+                best_score = score;
+                move = i;
             }
+
+            undo(board);
         }
     }
-    
-    // 有効手がない
+
+    // 先読み中有効手がないとき
     if (!had_valid_move)
     {
-        // ゲーム終了するときその盤面の評価値を返す
+        // ゲーム終了のとき評価値を返す
         if (!has_valid_move(OPPONENT(current_turn), board))
         {
             best_score = evaluate(current_turn, board);
         }
         else
         {
-            // パスのとき
-            // 手番を次に回す
+            // パスのとき手番を次に回す
             best_score = -negamax(next_move, self_disk, OPPONENT(current_turn), depth - 1, board);
         }
     }
