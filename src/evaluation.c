@@ -10,6 +10,15 @@ int evaluate(Disk disk, Board* board)
     return diff_disk;
 }
 
+Pos search_move(Disk self_disk, int depth, Board* board)
+{
+    Pos next_move;
+
+    negaalpha(&next_move, self_disk, self_disk, -INT_MAX, INT_MAX, depth, board);
+
+    return next_move;
+}
+
 int negaalpha(Pos* next_move,
             Disk self_disk,
             Disk current_turn,

@@ -25,6 +25,8 @@ void init_board(Board* board)
     // 黒先攻
     board->current_turn = BLACK;
 
+    board->turn_num = 1;
+
     // スタックの初期化
     for (int i = 0; i < STACK_LENGTH; i++)
     {
@@ -72,6 +74,12 @@ bool has_valid_move(Disk disk, Board* board)
     return false;
 }
 
+void change_turn(int n, Board* board)
+{
+    board->current_turn = OPPONENT(board->current_turn);
+    board->turn_num += n;
+}
+
 State get_state(Board* board)
 {
     Disk current = board->current_turn;
@@ -82,8 +90,7 @@ State get_state(Board* board)
     }
     else if (has_valid_move(OPPONENT(current), board))
     {
-        // 手番変更
-        board->current_turn = OPPONENT(board->current_turn);
+        change_turn(0, board);
         return PASS;
     }
 
@@ -188,7 +195,7 @@ int put_and_flip(Pos pos, Disk disk, Board* board)
     push(count, board);
     push(pos, board);
 
-    board->current_turn = OPPONENT(board->current_turn);
+    change_turn(1, board);
 
     return count;
 }
@@ -204,7 +211,7 @@ void undo(Board* board)
         board->square[pop(board)] *= -1;
     }
 
-    board->current_turn = OPPONENT(board->current_turn);
+    change_turn(-1, board);
 }
 
 void print_board(Board* board)

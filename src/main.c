@@ -38,9 +38,6 @@ int main()
 
     select_player(op);
 
-    // ターン数
-    int turn = 1;
-
     while (true)
     {
         print_board(&board);
@@ -49,9 +46,8 @@ int main()
 
         if (state == DO_TURN)
         {
-            printf("[%d] ", turn);
+            printf("[%d] ", board.turn_num);
             input(&board, op);
-            turn++;
         }
         else if (state == PASS)
         {
@@ -84,37 +80,29 @@ int main()
 void select_player(Operator* op)
 {
     printf("Select your turn\n");
-    printf("1: Black 2: White 3: None (COM vs COM)\n");
+    printf("1: Black 2: White Other: None (COM vs COM)\n");
 
-    while (true)
+    printf(">> ");
+
+    char input;
+
+    fgets(&input, 2, stdin);
+    fflush(stdin);
+
+    switch (atoi(&input))
     {
-        printf(">> ");
-
-        char input;
-
-        fgets(&input, 2, stdin);
-        fflush(stdin);
-
-        int n = atoi(&input);
-
-        if (n == 1)
-        {
+        case 1:
             op[0] = PLAYER;
             op[1] = COM;
             break;
-        }
-        else if (n == 2)
-        {
+        case 2:
             op[0] = COM;
             op[1] = PLAYER;
             break;
-        }
-        else if (n == 3)
-        {
+        default:
             op[0] = COM;
             op[1] = COM;
             break;
-        }
     }
 }
 
@@ -141,11 +129,10 @@ void input(Board* board, Operator* op)
 
         while (true)
         {
-            // 入力した文字を1~8の(x, y)座標に変換
             fgets(input, 3, stdin);
+            fflush(stdin);
             x = TO_INT_X(tolower(input[0]));
             y = TO_INT_Y(input[1]);
-            fflush(stdin);
 
             // 石の設置判定
             if (is_valid(x, y, board->current_turn, board))
@@ -162,16 +149,7 @@ void input(Board* board, Operator* op)
     }
     else
     {
-        Pos move;
-
-        // negaalpha法での探索
-        negaalpha(&move,
-                  board->current_turn,
-                  board->current_turn,
-                  -INT_MAX,
-                  INT_MAX,
-                  SEARCH_LEVEL,
-                  board);
+        Pos move = search_move(board->current_turn, SEARCH_LEVEL, board);
 
         // プレイヤーと同様に入力座標を表示
         printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));
