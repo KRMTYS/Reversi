@@ -104,6 +104,8 @@ bool is_valid(int, int, Disk, Board*);
 
 // 有効手を持つか
 bool has_valid_move(Disk, Board*);
+// 有効手を数える
+int count_valid_moves(Disk, Board*);
 
 // 手番の変更
 void change_turn(int, Board*);

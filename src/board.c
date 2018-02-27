@@ -74,6 +74,21 @@ bool has_valid_move(Disk disk, Board* board)
     return false;
 }
 
+int count_valid_moves(Disk disk, Board* board)
+{
+    int count = 0;
+
+    for (int i = 0; i < SQUARE_LENGTH; i++)
+    {
+        if (is_valid(TO_X(i), TO_Y(i), disk, board))
+        {
+            count++;
+        }
+    }
+
+    return count;
+}
+
 void change_turn(int n, Board* board)
 {
     board->current_turn = OPPONENT(board->current_turn);

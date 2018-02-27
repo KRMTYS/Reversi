@@ -7,7 +7,10 @@ int evaluate(Disk disk, Board* board)
     // 石数の差
     int diff_disk = count_disks(disk, board) - count_disks(OPPONENT(disk), board);
 
-    return diff_disk;
+    // 有効手の数
+    int valid_moves = count_valid_moves(disk, board);
+
+    return diff_disk + 2 * valid_moves;
 }
 
 Pos search_move(Disk self_disk, int depth, Board* board)
