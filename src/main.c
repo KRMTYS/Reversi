@@ -10,75 +10,19 @@
 #define SEARCH_LEVEL 5
 
 // 座標値-文字間変換
-#define TO_INT_X(c) (c - 0x60)
-#define TO_INT_Y(c) (c - 0x30)
-#define TO_CHAR_X(x) (x + 0x60)
-#define TO_CHAR_Y(y) (y + 0x30)
+#define TO_INT_X(c)     ((c) - 0x60)
+#define TO_INT_Y(c)     ((c) - 0x30)
+#define TO_CHAR_X(x)    ((x) + 0x60)
+#define TO_CHAR_Y(y)    ((y) + 0x30)
 
 // 操作者
-typedef enum
-{
+typedef enum {
     PLAYER, // プレイヤー 
     COM     // COM
-}
-Operator;
-
-void select_player(Operator*);
-void input(Board*, Operator*);
-
-int main()
-{
-    // 盤面
-    Board board;
-
-    init_board(&board);
-
-    // 順に黒番、白番
-    Operator op[2];
-
-    select_player(op);
-
-    while (true)
-    {
-        print_board(&board);
-
-        State state = get_state(&board);
-
-        if (state == DO_TURN)
-        {
-            printf("[%d] ", board.turn_num);
-            input(&board, op);
-        }
-        else if (state == PASS)
-        {
-            printf("Pass\n");
-        }
-        else
-        {
-            printf("Finish\n\n");
-            break;
-        }
-    }
-
-    switch (judge(&board))
-    {
-        case BLACK:
-            printf("* Black Wins *\n");
-            break;
-        case WHITE:
-            printf("* White Wins *\n");
-            break;
-        default:
-            printf("* Draw *\n");
-            break;
-    }
-
-    return 0;
-}
+} Operator;
 
 // プレイヤー選択
-void select_player(Operator* op)
-{
+void select_player(Operator* op) {
     printf("Select your turn\n");
     printf("1: Black 2: White Other: None (COM vs COM)\n");
 
@@ -89,8 +33,7 @@ void select_player(Operator* op)
     fgets(&input, 2, stdin);
     fflush(stdin);
 
-    switch (atoi(&input))
-    {
+    switch (atoi(&input)) {
         case 1:
             op[0] = PLAYER;
             op[1] = COM;
@@ -107,48 +50,37 @@ void select_player(Operator* op)
 }
 
 // 入力
-void input(Board* board, Operator* op)
-{
+void input(Board* board, Operator* op) {
     int index;
 
-    if (board->current_turn == BLACK)
-    {
+    if (board->current_turn == BLACK) {
         printf("Black(@) >> ");
         index = 0;
-    }
-    else
-    {
+    } else {
         printf("White(O) >> ");
         index = 1;
     }
 
-    if (op[index] == PLAYER)
-    {
+    if (op[index] == PLAYER) {
         char input[2];
         int x, y;
 
-        while (true)
-        {
+        while (true) {
             fgets(input, 3, stdin);
             fflush(stdin);
             x = TO_INT_X(tolower(input[0]));
             y = TO_INT_Y(input[1]);
 
             // 石の設置判定
-            if (is_valid(x, y, board->current_turn, board))
-            {
+            if (is_valid(x, y, board->current_turn, board)) {
                 break;
-            }
-            else
-            {
+            } else {
                 printf("Cannot put here: input again >> ");
             }
         }
 
         put_and_flip(TO_POS(x, y), board->current_turn, board);
-    }
-    else
-    {
+    } else {
         Pos move = search_move(board->current_turn, SEARCH_LEVEL, board);
 
         // プレイヤーと同様に入力座標を表示
@@ -158,4 +90,46 @@ void input(Board* board, Operator* op)
     }
 
     printf("\n");
+}
+
+int main(void) {
+    // 盤面
+    Board board;
+
+    init_board(&board);
+
+    // 順に黒番、白番
+    Operator op[2];
+
+    select_player(op);
+
+    while (true) {
+        print_board(&board);
+
+        State state = get_state(&board);
+
+        if (state == DO_TURN) {
+            printf("[%d] ", board.turn_num);
+            input(&board, op);
+        } else if (state == PASS) {
+            printf("Pass\n");
+        } else {
+            printf("Finish\n\n");
+            break;
+        }
+    }
+
+    switch (judge(&board)) {
+        case BLACK:
+            printf("* Black Wins *\n");
+            break;
+        case WHITE:
+            printf("* White Wins *\n");
+            break;
+        default:
+            printf("* Draw *\n");
+            break;
+    }
+
+    return 0;
 }

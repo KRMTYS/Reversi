@@ -9,14 +9,14 @@
 #define SQUARE_LENGTH 91
 
 // 座標インデックスへの変換
-#define TO_POS(x, y) (y * (SQUARE_SIZE + 1) + x)
+#define TO_POS(x, y)    ((y) * (SQUARE_SIZE + 1) + (x))
 
 // x-y座標への変換
-#define TO_X(p) (p % (SQUARE_SIZE + 1))
-#define TO_Y(p) ((int)(p / (SQUARE_SIZE + 1)))
+#define TO_X(p)         ((p) % (SQUARE_SIZE + 1))
+#define TO_Y(p)         ((int)((p) / (SQUARE_SIZE + 1)))
 
 // 逆の色を返す
-#define OPPONENT(c) (-1 * c)
+#define OPPONENT(c)     (-1 * (c))
 
 // スタック長、適当
 #define STACK_LENGTH 60 * 20
@@ -28,18 +28,15 @@
 #define EMPTY_STR "- "
 
 // 石とマスの状態
-typedef enum
-{
+typedef enum {
     WHITE = -1, // 白石
     EMPTY =  0, // 空
     BLACK =  1, // 黒石
     WALL  =  2  // 壁
-}
-Disk;
+} Disk;
 
 // 座標
-typedef enum
-{
+typedef enum {
     A1 = 10, B1, C1, D1, E1, F1, G1, H1,
     A2 = 19, B2, C2, D2, E2, F2, G2, H2,
     A3 = 28, B3, C3, D3, E3, F3, G3, H3,
@@ -48,12 +45,10 @@ typedef enum
     A6 = 55, B6, C6, D6, E6, F6, G6, H6,
     A7 = 64, B7, C7, D7, E7, F7, G7, H7,
     A8 = 73, B8, C8, D8, E8, F8, G8, H8
-}
-Pos;
+} Pos;
 
 // 方向
-typedef enum
-{
+typedef enum {
     UPPER       =  -9, // 上
     UPPER_RIGHT =  -8, // 右上
     UPPER_LEFT  = -10, // 左上
@@ -62,21 +57,17 @@ typedef enum
     LOWER       =   9, // 下
     LOWER_RIGHT =  10, // 右下
     LOWER_LEFT  =   8  // 左下
-}
-Dir;
+} Dir;
 
 // 手番状態
-typedef enum
-{
+typedef enum {
     DO_TURN,
     PASS,
     FINISH
-}
-State;
+} State;
 
 // 盤
-typedef struct
-{
+typedef struct {
     // 盤面
     Disk square[SQUARE_LENGTH];
     // 手番
@@ -88,55 +79,50 @@ typedef struct
     // の順に記録される
     int stack[STACK_LENGTH];
     // スタックポインタ
-    int* sp;
-}
-Board;
+    int *sp;
+} Board;
 
 // 盤面の初期化
-void init_board(Board*);
+void init_board(Board *board);
 
 // 盤内か
-bool is_on_board(int, int);
+bool is_on_board(int x, int y);
 // 空か
-bool is_empty(int, int, Board*);
+bool is_empty(int x, int y, Board *board);
 // 有効手か
-bool is_valid(int, int, Disk, Board*);
+bool is_valid(int x, int y, Disk disk, Board *board);
 
 // 有効手を持つか
-bool has_valid_move(Disk, Board*);
+bool has_valid_move(Disk disk, Board *board);
 // 有効手を数える
-int count_valid_moves(Disk, Board*);
+int count_valid_moves(Disk disk, Board *board);
 
 // 手番の変更
-void change_turn(int, Board*);
+void change_turn(int n, Board *board);
 
 // パス/終了判定
-State get_state(Board*);
+State get_state(Board *board);
 
 // ある座標から一方向の返せる石数を調べる
-int count_flip_disks_line(Pos, Disk, Dir, Board*);
+int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board *board);
 // ある座標に置くとき返せる石数を調べる
-int count_flip_disks(Pos, Disk, Board*);
+int count_flip_disks(Pos pos, Disk disk, Board *board);
 
 // 石数を数える
-int count_disks(Disk, Board*);
+int count_disks(Disk disk, Board *board);
 
 // 一方向への石の反転
-int flip_line(Pos, Disk, Dir, Board*);
+int flip_line(Pos pos, Disk disk, Dir dir, Board *board);
 // 石の設置と反転
-int put_and_flip(Pos, Disk, Board*);
+int put_and_flip(Pos pos, Disk disk, Board *board);
 
 // 局面を戻す
-void undo(Board*);
+void undo(Board *board);
 
 // 盤面の描画
-void print_board(Board*);
+void print_board(Board *board);
 
 // 勝敗判定
-Disk judge(Board*);
-
-// スタック操作
-void push(int n, Board*);
-int pop(Board*);
+Disk judge(Board *board);
 
 #endif // BOARD_H_

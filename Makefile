@@ -29,7 +29,7 @@ $(TARGET): $(OBJS)
 
 $(BUILDDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(BUILDDIR)/$(SRCDIR)
-	$(CC) $(CFLAGS) -MMD -c $< -o $@
+	$(CC) $(CFLAGS) -c -MMD $? -o $@
 
 clean:
 	$(RM) $(BUILDDIR)

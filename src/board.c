@@ -2,16 +2,20 @@
 
 #include <stdio.h>
 
-void init_board(Board* board)
-{
-    for (int i = 0; i < SQUARE_LENGTH; i++)
-    {
-        if (is_on_board(TO_X(i), TO_Y(i)))
-        {
+// スタック操作
+static void push(int n, Board *board) {
+    *(board->sp++) = n;
+}
+
+static int pop(Board *board) {
+    return *(--board->sp);
+}
+
+void init_board(Board *board) {
+    for (int i = 0; i < SQUARE_LENGTH; i++) {
+        if (is_on_board(TO_X(i), TO_Y(i))) {
             board->square[i] = EMPTY;
-        }
-        else
-        {
+        } else {
             board->square[i] = WALL;
         }
     }
@@ -28,45 +32,36 @@ void init_board(Board* board)
     board->turn_num = 1;
 
     // スタックの初期化
-    for (int i = 0; i < STACK_LENGTH; i++)
-    {
+    for (int i = 0; i < STACK_LENGTH; i++) {
         board->stack[i] = 0;
     }
 
     board->sp = board->stack;
 }
 
-bool is_on_board(int x, int y)
-{
+bool is_on_board(int x, int y) {
     return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE)) ? true : false;
 }
 
-bool is_empty(int x, int y, Board* board)
-{
+bool is_empty(int x, int y, Board *board) {
     return (board->square[TO_POS(x, y)] == EMPTY) ? true : false;
 }
 
-bool is_valid(int x, int y, Disk disk, Board* board)
-{
-    if (!is_on_board(x, y) || !is_empty(x, y, board))
-    {
+bool is_valid(int x, int y, Disk disk, Board *board) {
+    if (!is_on_board(x, y) || !is_empty(x, y, board)) {
         return false;
     }
 
-    if (count_flip_disks(TO_POS(x, y), disk, board) > 0)
-    {
+    if (count_flip_disks(TO_POS(x, y), disk, board) > 0) {
         return true;
     }
 
     return false;
 }
 
-bool has_valid_move(Disk disk, Board* board)
-{
-    for (int i = 0; i < SQUARE_LENGTH; i++)
-    {
-        if (is_valid(TO_X(i), TO_Y(i), disk, board))
-        {
+bool has_valid_move(Disk disk, Board *board) {
+    for (int i = 0; i < SQUARE_LENGTH; i++) {
+        if (is_valid(TO_X(i), TO_Y(i), disk, board)) {
             return true;
         }
     }
@@ -74,14 +69,11 @@ bool has_valid_move(Disk disk, Board* board)
     return false;
 }
 
-int count_valid_moves(Disk disk, Board* board)
-{
+int count_valid_moves(Disk disk, Board *board) {
     int count = 0;
 
-    for (int i = 0; i < SQUARE_LENGTH; i++)
-    {
-        if (is_valid(TO_X(i), TO_Y(i), disk, board))
-        {
+    for (int i = 0; i < SQUARE_LENGTH; i++) {
+        if (is_valid(TO_X(i), TO_Y(i), disk, board)) {
             count++;
         }
     }
@@ -89,22 +81,17 @@ int count_valid_moves(Disk disk, Board* board)
     return count;
 }
 
-void change_turn(int n, Board* board)
-{
+void change_turn(int n, Board *board) {
     board->current_turn = OPPONENT(board->current_turn);
     board->turn_num += n;
 }
 
-State get_state(Board* board)
-{
+State get_state(Board *board) {
     Disk current = board->current_turn;
 
-    if (has_valid_move(current, board))
-    {
+    if (has_valid_move(current, board)) {
         return DO_TURN;
-    }
-    else if (has_valid_move(OPPONENT(current), board))
-    {
+    } else if (has_valid_move(OPPONENT(current), board)) {
         change_turn(0, board);
         return PASS;
     }
@@ -112,16 +99,13 @@ State get_state(Board* board)
     return FINISH;
 }
 
-int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board* board)
-{
+int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board *board) {
     int count = 0;
 
     // 同色石まで探索
-    for (int i = pos + dir; board->square[i] != disk ; i += dir)
-    {
+    for (int i = pos + dir; board->square[i] != disk ; i += dir) {
         // 空き/壁があるとき返せない
-        if ((board->square[i] == EMPTY) || (board->square[i] == WALL))
-        {
+        if ((board->square[i] == EMPTY) || (board->square[i] == WALL)) {
             return 0;
         }
 
@@ -131,8 +115,7 @@ int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board* board)
     return count;
 }
 
-int count_flip_disks(Pos pos, Disk disk, Board* board)
-{
+int count_flip_disks(Pos pos, Disk disk, Board *board) {
     int count = 0;
 
     count += count_flip_disks_line(pos, disk, UPPER, board);
@@ -147,14 +130,11 @@ int count_flip_disks(Pos pos, Disk disk, Board* board)
     return count;
 }
 
-int count_disks(Disk disk, Board* board)
-{
+int count_disks(Disk disk, Board *board) {
     int count = 0;
 
-    for (int i = 0; i < SQUARE_LENGTH; i++)
-    {
-        if (board->square[i] == disk)
-        {
+    for (int i = 0; i < SQUARE_LENGTH; i++) {
+        if (board->square[i] == disk) {
             count++;
         }
     }
@@ -162,17 +142,14 @@ int count_disks(Disk disk, Board* board)
     return count;
 }
 
-int flip_line(Pos pos, Disk disk, Dir dir, Board* board)
-{
+int flip_line(Pos pos, Disk disk, Dir dir, Board *board) {
     int count = 0;
     int n;
 
     // 同色石まで探索
-    for (n = pos + dir; board->square[n] != disk ; n += dir)
-    {
+    for (n = pos + dir; board->square[n] != disk ; n += dir) {
         // 空き/壁があるとき返せない
-        if ((board->square[n] == EMPTY) || (board->square[n] == WALL))
-        {
+        if ((board->square[n] == EMPTY) || (board->square[n] == WALL)) {
             return 0;
         }
 
@@ -182,8 +159,7 @@ int flip_line(Pos pos, Disk disk, Dir dir, Board* board)
     n -= dir;
 
     // 石を返す
-    while (n != pos)
-    {
+    while (n != (int)pos) {
         board->square[n] = disk;
         push(n, board);
         n -= dir;
@@ -192,8 +168,7 @@ int flip_line(Pos pos, Disk disk, Dir dir, Board* board)
     return count;
 }
 
-int put_and_flip(Pos pos, Disk disk, Board* board)
-{
+int put_and_flip(Pos pos, Disk disk, Board *board) {
     int count = 0;
     
     count += flip_line(pos, disk, UPPER, board);
@@ -215,33 +190,27 @@ int put_and_flip(Pos pos, Disk disk, Board* board)
     return count;
 }
 
-void undo(Board* board)
-{
+void undo(Board *board) {
     board->square[pop(board)] = EMPTY;
 
     int n = pop(board);
 
-    for (int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
         board->square[pop(board)] *= -1;
     }
 
     change_turn(-1, board);
 }
 
-void print_board(Board* board)
-{
+void print_board(Board *board) {
     printf("    a b c d e f g h \n");
     printf("  +-----------------+\n");
 
-    for (int y = 1; y <= SQUARE_SIZE; y++)
-    {
+    for (int y = 1; y <= SQUARE_SIZE; y++) {
         printf("%d | ", y);
 
-        for (int x = 1; x <= SQUARE_SIZE; x++)
-        {
-            switch (board->square[TO_POS(x, y)])
-            {
+        for (int x = 1; x <= SQUARE_SIZE; x++) {
+            switch (board->square[TO_POS(x, y)]) {
                 case WHITE:
                     printf(WHITE_STR);
                     break;
@@ -249,12 +218,10 @@ void print_board(Board* board)
                     printf(BLACK_STR);
                     break;
                 default:
-                    if (is_valid(x, y, board->current_turn, board))
-                    {
+                    if (is_valid(x, y, board->current_turn, board)) {
                         printf(VALID_STR);
                     }
-                    else
-                    {
+                    else {
                         printf(EMPTY_STR);
                     }
                     break;
@@ -268,31 +235,15 @@ void print_board(Board* board)
     printf("@:%2d O:%2d\n", count_disks(BLACK, board), count_disks(WHITE, board));
 }
 
-Disk judge(Board* board)
-{
+Disk judge(Board *board) {
     int num_black = count_disks(BLACK, board);
     int num_white = count_disks(WHITE, board);
 
-    if (num_black > num_white)
-    {
+    if (num_black > num_white) {
         return BLACK;
-    }
-    else if (num_black < num_white)
-    {
+    } else if (num_black < num_white) {
         return WHITE;
-    }
-    else
-    {
+    } else {
         return EMPTY;
     }
-}
-
-void push(int n, Board* board)
-{
-    *(board->sp++) = n;
-}
-
-int pop(Board* board)
-{
-    return *(--board->sp);
 }
