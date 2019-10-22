@@ -20,16 +20,16 @@ DEPS := $(OBJS:.o=.d)
 
 .PHONY: all clean
 
--include $(DEPS)
-
 all: $(TARGET)
+
+-include $(DEPS)
 
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@
 
-$(BUILDDIR)/$(SRCDIR)/%.o: $(SRCDIR)/%.c
+$(BUILDDIR)/%.o: %.c
 	@mkdir -p $(BUILDDIR)/$(SRCDIR)
-	$(CC) $(CFLAGS) -c -MMD $? -o $@
+	$(CC) $(CFLAGS) -c -MMD $< -o $@
 
 clean:
 	$(RM) $(BUILDDIR)
