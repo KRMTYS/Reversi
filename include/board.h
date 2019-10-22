@@ -1,5 +1,5 @@
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef BOARD_H_
+#define BOARD_H_
 
 #include <stdbool.h>
 
@@ -139,4 +139,4 @@ Disk judge(Board*);
 void push(int n, Board*);
 int pop(Board*);
 
-#endif
+#endif // BOARD_H_

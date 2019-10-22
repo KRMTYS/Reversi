@@ -1,6 +1,6 @@
-#include <limits.h>
-
 #include "evaluation.h"
+
+#include <limits.h>
 
 int evaluate(Disk disk, Board* board)
 {

@@ -1,6 +1,6 @@
-#include <stdio.h>
-
 #include "board.h"
+
+#include <stdio.h>
 
 void init_board(Board* board)
 {

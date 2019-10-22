@@ -1,5 +1,5 @@
-#ifndef EVALUATION_H
-#define EVALUATION_H
+#ifndef EVALUATION_H_
+#define EVALUATION_H_
 
 #include "board.h"
 
@@ -12,4 +12,4 @@ Pos search_move(Disk, int, Board*);
 // NegaAlpha法による探索
 int negaalpha(Pos*, Disk, Disk, int, int, int, Board*);
 
-#endif
+#endif // EVALUATION_H_
