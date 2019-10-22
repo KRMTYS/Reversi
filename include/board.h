@@ -87,8 +87,6 @@ void init_board(Board *board);
 
 // 盤内か
 bool is_on_board(int x, int y);
-// 空か
-bool is_empty(int x, int y, Board *board);
 // 有効手か
 bool is_valid(int x, int y, Disk disk, Board *board);
 
@@ -103,16 +101,12 @@ void change_turn(int n, Board *board);
 // パス/終了判定
 State get_state(Board *board);
 
-// ある座標から一方向の返せる石数を調べる
-int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board *board);
 // ある座標に置くとき返せる石数を調べる
 int count_flip_disks(Pos pos, Disk disk, Board *board);
 
 // 石数を数える
 int count_disks(Disk disk, Board *board);
 
-// 一方向への石の反転
-int flip_line(Pos pos, Disk disk, Dir dir, Board *board);
 // 石の設置と反転
 int put_and_flip(Pos pos, Disk disk, Board *board);
 

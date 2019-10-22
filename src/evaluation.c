@@ -2,6 +2,7 @@
 
 #include <limits.h>
 
+// 評価関数
 int evaluate(Disk disk, Board *board) {
     // 石数の差
     int diff_disk = count_disks(disk, board) - count_disks(OPPONENT(disk), board);
@@ -12,14 +13,7 @@ int evaluate(Disk disk, Board *board) {
     return diff_disk + 2 * valid_moves;
 }
 
-Pos search_move(Disk self_disk, int depth, Board *board) {
-    Pos next_move;
-
-    negaalpha(&next_move, self_disk, self_disk, -INT_MAX, INT_MAX, depth, board);
-
-    return next_move;
-}
-
+// NegaAlpha法による探索
 int negaalpha(Pos *next_move,
               Disk self_disk,
               Disk current_turn,
@@ -87,4 +81,12 @@ int negaalpha(Pos *next_move,
     *next_move = move;
 
     return alpha;
+}
+
+Pos search_move(Disk self_disk, int depth, Board *board) {
+    Pos next_move;
+
+    negaalpha(&next_move, self_disk, self_disk, -INT_MAX, INT_MAX, depth, board);
+
+    return next_move;
 }

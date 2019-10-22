@@ -43,7 +43,7 @@ bool is_on_board(int x, int y) {
     return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE)) ? true : false;
 }
 
-bool is_empty(int x, int y, Board *board) {
+static bool is_empty(int x, int y, Board *board) {
     return (board->square[TO_POS(x, y)] == EMPTY) ? true : false;
 }
 
@@ -99,7 +99,7 @@ State get_state(Board *board) {
     return FINISH;
 }
 
-int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board *board) {
+static int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board *board) {
     int count = 0;
 
     // 同色石まで探索
@@ -142,7 +142,7 @@ int count_disks(Disk disk, Board *board) {
     return count;
 }
 
-int flip_line(Pos pos, Disk disk, Dir dir, Board *board) {
+static int flip_line(Pos pos, Disk disk, Dir dir, Board *board) {
     int count = 0;
     int n;
 
