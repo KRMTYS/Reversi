@@ -8,7 +8,7 @@
 #include "evaluation.h"
 
 const char option_str[] = "options:\n \
-    -b) start with black (first turn)\n \
+    -b) start with black (first turn, by default)\n \
     -w) start with white (second turn)\n \
     -c) COM vs COM\n \
     -h) show this strings\n";
@@ -28,24 +28,31 @@ typedef enum {
     COM     // COM
 } Operator;
 
-// 入力
-void input(Board* board, Operator* op) {
-    int index;
+// プロンプト表示
+void show_prompt(int turn_num, Disk current_turn) {
+    printf("[%d] ", turn_num);
 
-    if (board->current_turn == BLACK) {
+    if (current_turn == BLACK) {
         printf("Black(@) >> ");
-        index = 0;
     } else {
         printf("White(O) >> ");
-        index = 1;
     }
+}
 
+// 入力
+void input(Board* board, Operator* op) {
+    int index = (board->current_turn == BLACK) ? 0 : 1;
+
+    show_prompt(board->turn_num, board->current_turn);
+
+    // PLAYER
     if (op[index] == PLAYER) {
-        char input[2];
+        // 入力バッファ長は適当
+        char input[10];
         int x, y;
 
         while (true) {
-            fgets(input, 3, stdin);
+            fgets(input, sizeof(input), stdin);
             fflush(stdin);
             x = TO_INT_X(tolower(input[0]));
             y = TO_INT_Y(input[1]);
@@ -54,11 +61,12 @@ void input(Board* board, Operator* op) {
             if (is_valid(x, y, board->current_turn, board)) {
                 break;
             } else {
-                printf("Cannot put here: input again >> ");
+                printf("cannot put: retry\n");
+                show_prompt(board->turn_num, board->current_turn);
             }
         }
-
         put_and_flip(TO_POS(x, y), board->current_turn, board);
+    // COM
     } else {
         Pos move = search_move(board->current_turn, SEARCH_LEVEL, board);
 
@@ -112,7 +120,6 @@ int main(int argc, char *argv[]) {
         State state = get_state(&board);
 
         if (state == DO_TURN) {
-            printf("[%d] ", board.turn_num);
             input(&board, op);
         } else if (state == PASS) {
             printf("Pass\n");
