@@ -39,6 +39,20 @@ void show_prompt(int turn_num, Disk current_turn) {
     }
 }
 
+// 勝敗判定
+void judge(Board *board) {
+    int n_black = count_disks(BLACK, board);
+    int n_white = count_disks(WHITE, board);
+
+    if (n_black > n_white) {
+        printf("* Black Wins *\n");
+    } else if (n_black < n_white) {
+        printf("* White Wins *\n");
+    } else {
+        printf("* Draw *\n");
+    }
+}
+
 // 入力
 void input(Board* board, Operator* op) {
     int index = (board->current_turn == BLACK) ? 0 : 1;
@@ -129,17 +143,7 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    switch (judge(&board)) {
-        case BLACK:
-            printf("* Black Wins *\n");
-            break;
-        case WHITE:
-            printf("* White Wins *\n");
-            break;
-        default:
-            printf("* Draw *\n");
-            break;
-    }
+    judge(&board);
 
     return 0;
 }

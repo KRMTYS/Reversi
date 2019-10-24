@@ -11,6 +11,14 @@ static int pop(Board *board) {
     return *(--board->sp);
 }
 
+static bool is_on_board(int x, int y) {
+    return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE)) ? true : false;
+}
+
+static bool is_empty(int x, int y, Board *board) {
+    return (board->square[TO_POS(x, y)] == EMPTY) ? true : false;
+}
+
 void init_board(Board *board) {
     for (int i = 0; i < SQUARE_LENGTH; i++) {
         if (is_on_board(TO_X(i), TO_Y(i))) {
@@ -39,14 +47,6 @@ void init_board(Board *board) {
     board->sp = board->stack;
 }
 
-bool is_on_board(int x, int y) {
-    return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE)) ? true : false;
-}
-
-static bool is_empty(int x, int y, Board *board) {
-    return (board->square[TO_POS(x, y)] == EMPTY) ? true : false;
-}
-
 bool is_valid(int x, int y, Disk disk, Board *board) {
     if (!is_on_board(x, y) || !is_empty(x, y, board)) {
         return false;
@@ -60,13 +60,7 @@ bool is_valid(int x, int y, Disk disk, Board *board) {
 }
 
 bool has_valid_move(Disk disk, Board *board) {
-    for (int i = 0; i < SQUARE_LENGTH; i++) {
-        if (is_valid(TO_X(i), TO_Y(i), disk, board)) {
-            return true;
-        }
-    }
-
-    return false;
+    return (count_valid_moves(disk, board) > 0) ? true : false;
 }
 
 int count_valid_moves(Disk disk, Board *board) {
@@ -233,17 +227,4 @@ void print_board(Board *board) {
     printf("  +-----------------+\n");
 
     printf("@:%2d O:%2d\n", count_disks(BLACK, board), count_disks(WHITE, board));
-}
-
-Disk judge(Board *board) {
-    int num_black = count_disks(BLACK, board);
-    int num_white = count_disks(WHITE, board);
-
-    if (num_black > num_white) {
-        return BLACK;
-    } else if (num_black < num_white) {
-        return WHITE;
-    } else {
-        return EMPTY;
-    }
 }

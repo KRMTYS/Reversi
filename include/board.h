@@ -85,8 +85,6 @@ typedef struct {
 // 盤面の初期化
 void init_board(Board *board);
 
-// 盤内か
-bool is_on_board(int x, int y);
 // 有効手か
 bool is_valid(int x, int y, Disk disk, Board *board);
 
@@ -115,8 +113,5 @@ void undo(Board *board);
 
 // 盤面の描画
 void print_board(Board *board);
-
-// 勝敗判定
-Disk judge(Board *board);
 
 #endif // BOARD_H_
