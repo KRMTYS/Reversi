@@ -39,7 +39,7 @@ $(TARGET): $(OBJS)
 
 $(BUILDDIR)/$(TYPE)/%.o: %.c
 	@mkdir -p $(BUILDDIR)/$(TYPE)/$(SRCDIR)
-	$(CC) $(CFLAGS) -c -MMD -MP $^ -o $@
+	$(CC) $(CFLAGS) -c -MMD -MP $< -o $@
 
 clean:
 	$(RM) $(BUILDDIR)
