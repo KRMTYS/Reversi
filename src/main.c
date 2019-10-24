@@ -2,9 +2,16 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <limits.h>
+#include <getopt.h>
 
 #include "board.h"
 #include "evaluation.h"
+
+const char option_str[] = "options:\n \
+    -b) start with black (first turn)\n \
+    -w) start with white (second turn)\n \
+    -c) COM vs COM\n \
+    -h) show this strings\n";
 
 // 探索レベル
 #define SEARCH_LEVEL 5
@@ -20,34 +27,6 @@ typedef enum {
     PLAYER, // プレイヤー 
     COM     // COM
 } Operator;
-
-// プレイヤー選択
-void select_player(Operator* op) {
-    printf("Select your turn\n");
-    printf("1: Black 2: White Other: None (COM vs COM)\n");
-
-    printf(">> ");
-
-    char input;
-
-    fgets(&input, 2, stdin);
-    fflush(stdin);
-
-    switch (atoi(&input)) {
-        case 1:
-            op[0] = PLAYER;
-            op[1] = COM;
-            break;
-        case 2:
-            op[0] = COM;
-            op[1] = PLAYER;
-            break;
-        default:
-            op[0] = COM;
-            op[1] = COM;
-            break;
-    }
-}
 
 // 入力
 void input(Board* board, Operator* op) {
@@ -92,16 +71,40 @@ void input(Board* board, Operator* op) {
     printf("\n");
 }
 
-int main(void) {
+int main(int argc, char *argv[]) {
+    // 順に黒番、白番
+    Operator op[2] = { PLAYER, COM };
+
+    int opt;
+    while ((opt = getopt(argc, argv, "bwch")) != -1) {
+        switch (opt) {
+            case 'b':
+                op[0] = PLAYER;
+                op[1] = COM;
+                break;
+            case 'w':
+                op[0] = COM;
+                op[1] = PLAYER;
+                break;
+            case 'c':
+                op[0] = COM;
+                op[1] = COM;
+                break;
+            case 'h':
+                printf(option_str);
+                return 0;
+                break;
+            default:
+                printf("invalid option : \'%c\'", opt);
+                return 1;
+                break;
+        }
+    }
+
     // 盤面
     Board board;
 
     init_board(&board);
-
-    // 順に黒番、白番
-    Operator op[2];
-
-    select_player(op);
 
     while (true) {
         print_board(&board);
