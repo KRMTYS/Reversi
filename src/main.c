@@ -82,7 +82,7 @@ void input(Board* board, Operator* op) {
         put_and_flip(TO_POS(x, y), board->current_turn, board);
     // COM
     } else {
-        Pos move = search_move(board->current_turn, SEARCH_LEVEL, board);
+        Pos move = search_move(board, board->current_turn, SEARCH_LEVEL);
 
         // プレイヤーと同様に入力座標を表示
         printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));

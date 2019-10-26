@@ -14,11 +14,11 @@ int evaluate(Disk disk, Board *board) {
 }
 
 // NegaAlpha法による探索
-int negaalpha(Pos *next_move,
-              Disk self_disk,
-              Disk current_turn,
-              int alpha, int beta, int depth,
-              Board *board) {
+int negaalpha(Board *board,
+              Disk self_disk, Disk current_turn,
+              Pos *next_move,
+              int alpha, int beta,
+              int depth) {
     if (depth == 0) {
         if (self_disk == current_turn) {
             return evaluate(current_turn, board);
@@ -39,13 +39,11 @@ int negaalpha(Pos *next_move,
 
             had_valid_move = true;
 
-            int score = -negaalpha(next_move,
-                                   self_disk,
-                                   OPPONENT(current_turn),
-                                   -beta,
-                                   -alpha,
-                                   depth - 1,
-                                   board);
+            int score = -negaalpha(board,
+                                   self_disk, OPPONENT(current_turn),
+                                   next_move,
+                                   -beta, -alpha,
+                                   (depth - 1));
 
             undo(board);
 
@@ -68,13 +66,11 @@ int negaalpha(Pos *next_move,
             alpha = evaluate(current_turn, board);
         } else {
             // パスのとき手番を次に回す
-            alpha = -negaalpha(next_move,
-                               self_disk,
-                               OPPONENT(current_turn),
-                               -beta,
-                               -alpha,
-                               depth - 1,
-                               board);
+            alpha = -negaalpha(board,
+                               self_disk, OPPONENT(current_turn),
+                               next_move,
+                               -beta, -alpha,
+                               (depth - 1));
         }
     }
 
@@ -83,10 +79,11 @@ int negaalpha(Pos *next_move,
     return alpha;
 }
 
-Pos search_move(Disk self_disk, int depth, Board *board) {
+Pos search_move(Board *board, Disk self_disk, int depth) {
     Pos next_move;
 
-    negaalpha(&next_move, self_disk, self_disk, -INT_MAX, INT_MAX, depth, board);
+    //negaalpha(&next_move, self_disk, self_disk, -INT_MAX, INT_MAX, depth, board);
+    negaalpha(board, self_disk, self_disk, &next_move, -INT_MAX, INT_MAX, depth);
 
     return next_move;
 }

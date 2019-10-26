@@ -4,6 +4,6 @@
 #include "board.h"
 
 // 探索した手の取得
-Pos search_move(Disk self_disk, int depth, Board *board);
+Pos search_move(Board *board, Disk self_disk, int depth);
 
 #endif // EVALUATION_H_
