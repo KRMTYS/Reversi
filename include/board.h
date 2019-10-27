@@ -94,7 +94,7 @@ bool has_valid_move(Disk disk, Board *board);
 int count_valid_moves(Disk disk, Board *board);
 
 // 手番の変更
-void change_turn(int n, Board *board);
+void change_turn(Board *board, int n);
 
 // パス/終了判定
 State get_state(Board *board);
@@ -103,10 +103,10 @@ State get_state(Board *board);
 int count_flip_disks(Pos pos, Disk disk, Board *board);
 
 // 石数を数える
-int count_disks(Disk disk, Board *board);
+int count_disks(Board *board, Disk disk);
 
 // 石の設置と反転
-int put_and_flip(Pos pos, Disk disk, Board *board);
+int put_and_flip(Board *board, Disk disk, Pos pos);
 
 // 局面を戻す
 void undo(Board *board);

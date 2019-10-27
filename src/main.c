@@ -41,8 +41,8 @@ void show_prompt(int turn_num, Disk current_turn) {
 
 // 勝敗判定
 void judge(Board *board) {
-    int n_black = count_disks(BLACK, board);
-    int n_white = count_disks(WHITE, board);
+    int n_black = count_disks(board, BLACK);
+    int n_white = count_disks(board, WHITE);
 
     if (n_black > n_white) {
         printf("* Black Wins *\n");
@@ -79,7 +79,7 @@ void input(Board* board, Operator* op) {
                 show_prompt(board->turn_num, board->current_turn);
             }
         }
-        put_and_flip(TO_POS(x, y), board->current_turn, board);
+        put_and_flip(board, board->current_turn, TO_POS(x, y));
     // COM
     } else {
         Pos move = search_move(board, board->current_turn, SEARCH_LEVEL);
@@ -87,7 +87,7 @@ void input(Board* board, Operator* op) {
         // プレイヤーと同様に入力座標を表示
         printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));
 
-        put_and_flip(move, board->current_turn, board);
+        put_and_flip(board, board->current_turn, move);
     }
 
     printf("\n");

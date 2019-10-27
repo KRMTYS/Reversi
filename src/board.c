@@ -75,7 +75,7 @@ int count_valid_moves(Disk disk, Board *board) {
     return count;
 }
 
-void change_turn(int n, Board *board) {
+void change_turn(Board *board, int n) {
     board->current_turn = OPPONENT(board->current_turn);
     board->turn_num += n;
 }
@@ -86,7 +86,7 @@ State get_state(Board *board) {
     if (has_valid_move(current, board)) {
         return DO_TURN;
     } else if (has_valid_move(OPPONENT(current), board)) {
-        change_turn(0, board);
+        change_turn(board, 0);
         return PASS;
     }
 
@@ -124,7 +124,7 @@ int count_flip_disks(Pos pos, Disk disk, Board *board) {
     return count;
 }
 
-int count_disks(Disk disk, Board *board) {
+int count_disks(Board *board, Disk disk) {
     int count = 0;
 
     for (int i = 0; i < SQUARE_LENGTH; i++) {
@@ -162,7 +162,7 @@ static int flip_line(Pos pos, Disk disk, Dir dir, Board *board) {
     return count;
 }
 
-int put_and_flip(Pos pos, Disk disk, Board *board) {
+int put_and_flip(Board *board, Disk disk, Pos pos) {
     int count = 0;
     
     count += flip_line(pos, disk, UPPER, board);
@@ -179,7 +179,7 @@ int put_and_flip(Pos pos, Disk disk, Board *board) {
     push(count, board);
     push(pos, board);
 
-    change_turn(1, board);
+    change_turn(board, 1);
 
     return count;
 }
@@ -193,7 +193,7 @@ void undo(Board *board) {
         board->square[pop(board)] *= -1;
     }
 
-    change_turn(-1, board);
+    change_turn(board, -1);
 }
 
 void print_board(Board *board) {
@@ -226,5 +226,5 @@ void print_board(Board *board) {
     }
     printf("  +-----------------+\n");
 
-    printf("@:%2d O:%2d\n", count_disks(BLACK, board), count_disks(WHITE, board));
+    printf("@:%2d O:%2d\n", count_disks(board, BLACK), count_disks(board, WHITE));
 }

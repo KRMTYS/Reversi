@@ -5,7 +5,7 @@
 // 評価関数
 int evaluate(Disk disk, Board *board) {
     // 石数の差
-    int diff_disk = count_disks(disk, board) - count_disks(OPPONENT(disk), board);
+    int diff_disk = count_disks(board, disk) - count_disks(board, OPPONENT(disk));
 
     // 有効手の数
     int valid_moves = count_valid_moves(disk, board);
@@ -35,7 +35,7 @@ int negaalpha(Board *board,
 
     for (int i = 0; i < SQUARE_LENGTH; i++) {
         if (is_valid(TO_X(i), TO_Y(i), current_turn, board)) {
-            put_and_flip(i, current_turn, board);
+            put_and_flip(board, current_turn, i);
 
             had_valid_move = true;
 
