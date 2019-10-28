@@ -57,7 +57,7 @@ void judge(Board *board) {
 void input(Board* board, Operator* op) {
     int index = (board->current_turn == BLACK) ? 0 : 1;
 
-    show_prompt(board->turn_num, board->current_turn);
+    show_prompt(board->turn, board->current_turn);
 
     // PLAYER
     if (op[index] == PLAYER) {
@@ -76,7 +76,7 @@ void input(Board* board, Operator* op) {
                 break;
             } else {
                 printf("cannot put: retry\n");
-                show_prompt(board->turn_num, board->current_turn);
+                show_prompt(board->turn, board->current_turn);
             }
         }
         put_and_flip(board, board->current_turn, TO_POS(x, y));

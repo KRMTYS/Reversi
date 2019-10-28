@@ -3,11 +3,11 @@
 #include <stdio.h>
 
 // スタック操作
-static void push(Board *board, int n) {
+static void push_stack(Board *board, int n) {
     *(board->sp++) = n;
 }
 
-static int pop(Board *board) {
+static int pop_stack(Board *board) {
     return *(--board->sp);
 }
 
@@ -37,7 +37,7 @@ void init_board(Board *board) {
     // 黒先攻
     board->current_turn = BLACK;
 
-    board->turn_num = 1;
+    board->turn = 1;
 
     // スタックの初期化
     for (int i = 0; i < STACK_LENGTH; i++) {
@@ -77,7 +77,7 @@ int count_valid_moves(Board *board, Disk disk) {
 
 void change_turn(Board *board, int n) {
     board->current_turn = OPPONENT(board->current_turn);
-    board->turn_num += n;
+    board->turn += n;
 }
 
 State get_state(Board *board) {
@@ -155,7 +155,7 @@ static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
     // 石を返す
     while (n != (int)pos) {
         board->square[n] = disk;
-        push(board, n);
+        push_stack(board, n);
         n -= dir;
     }
 
@@ -176,8 +176,8 @@ int put_and_flip(Board *board, Disk disk, Pos pos) {
 
     board->square[pos] = disk;
 
-    push(board, count);
-    push(board, pos);
+    push_stack(board, count);
+    push_stack(board, pos);
 
     change_turn(board, 1);
 
@@ -185,12 +185,12 @@ int put_and_flip(Board *board, Disk disk, Pos pos) {
 }
 
 void undo(Board *board) {
-    board->square[pop(board)] = EMPTY;
+    board->square[pop_stack(board)] = EMPTY;
 
-    int n = pop(board);
+    int n = pop_stack(board);
 
     for (int i = 0; i < n; i++) {
-        board->square[pop(board)] *= -1;
+        board->square[pop_stack(board)] *= -1;
     }
 
     change_turn(board, -1);

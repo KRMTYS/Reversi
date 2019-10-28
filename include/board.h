@@ -73,7 +73,7 @@ typedef struct {
     // 手番
     Disk current_turn;
     // 手番数
-    int turn_num;
+    int turn;
     // 手番を記録するスタック
     // (返した石の位置1), ... , (返した石の数), (置いた石の位置)
     // の順に記録される
