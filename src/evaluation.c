@@ -3,7 +3,7 @@
 #include <limits.h>
 
 // 評価関数
-int evaluate(Disk disk, Board *board) {
+int evaluate(Board *board, Disk disk) {
     // 石数の差
     int diff_disk = count_disks(board, disk) - count_disks(board, OPPONENT(disk));
 
@@ -21,11 +21,11 @@ int negaalpha(Board *board,
               int depth) {
     if (depth == 0) {
         if (self_disk == current_turn) {
-            return evaluate(current_turn, board);
+            return evaluate(board, current_turn);
         }
         // 相手の手番では負の評価値を返す
         else {
-            return -evaluate(current_turn, board);
+            return -evaluate(board, current_turn);
         }
     }
 
@@ -63,7 +63,7 @@ int negaalpha(Board *board,
     if (!had_valid_move) {
         // ゲーム終了のとき評価値を返す
         if (!has_valid_move(board, OPPONENT(current_turn))) {
-            alpha = evaluate(current_turn, board);
+            alpha = evaluate(board, current_turn);
         } else {
             // パスのとき手番を次に回す
             alpha = -negaalpha(board,

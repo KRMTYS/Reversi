@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 // スタック操作
-static void push(int n, Board *board) {
+static void push(Board *board, int n) {
     *(board->sp++) = n;
 }
 
@@ -15,7 +15,7 @@ static bool is_on_board(int x, int y) {
     return ((x >= 1) && (x <= SQUARE_SIZE) && (y >= 1) && (y <= SQUARE_SIZE)) ? true : false;
 }
 
-static bool is_empty(int x, int y, Board *board) {
+static bool is_empty(Board *board, int x, int y) {
     return (board->square[TO_POS(x, y)] == EMPTY) ? true : false;
 }
 
@@ -48,7 +48,7 @@ void init_board(Board *board) {
 }
 
 bool is_valid(Board *board, Disk disk, int x, int y) {
-    if (!is_on_board(x, y) || !is_empty(x, y, board)) {
+    if (!is_on_board(x, y) || !is_empty(board, x, y)) {
         return false;
     }
 
@@ -136,7 +136,7 @@ int count_disks(Board *board, Disk disk) {
     return count;
 }
 
-static int flip_line(Pos pos, Disk disk, Dir dir, Board *board) {
+static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
     int count = 0;
     int n;
 
@@ -155,7 +155,7 @@ static int flip_line(Pos pos, Disk disk, Dir dir, Board *board) {
     // 石を返す
     while (n != (int)pos) {
         board->square[n] = disk;
-        push(n, board);
+        push(board, n);
         n -= dir;
     }
 
@@ -165,19 +165,19 @@ static int flip_line(Pos pos, Disk disk, Dir dir, Board *board) {
 int put_and_flip(Board *board, Disk disk, Pos pos) {
     int count = 0;
     
-    count += flip_line(pos, disk, UPPER, board);
-    count += flip_line(pos, disk, UPPER_RIGHT, board);
-    count += flip_line(pos, disk, UPPER_LEFT, board);
-    count += flip_line(pos, disk, RIGHT, board);
-    count += flip_line(pos, disk, LEFT, board);
-    count += flip_line(pos, disk, LOWER, board);
-    count += flip_line(pos, disk, LOWER_RIGHT, board);
-    count += flip_line(pos, disk, LOWER_LEFT, board);
+    count += flip_line(board, disk, pos, UPPER);
+    count += flip_line(board, disk, pos, UPPER_RIGHT);
+    count += flip_line(board, disk, pos, UPPER_LEFT);
+    count += flip_line(board, disk, pos, RIGHT);
+    count += flip_line(board, disk, pos, LEFT);
+    count += flip_line(board, disk, pos, LOWER);
+    count += flip_line(board, disk, pos, LOWER_RIGHT);
+    count += flip_line(board, disk, pos, LOWER_LEFT);
 
     board->square[pos] = disk;
 
-    push(count, board);
-    push(pos, board);
+    push(board, count);
+    push(board, pos);
 
     change_turn(board, 1);
 
