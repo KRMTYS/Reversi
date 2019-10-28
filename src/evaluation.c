@@ -8,7 +8,7 @@ int evaluate(Disk disk, Board *board) {
     int diff_disk = count_disks(board, disk) - count_disks(board, OPPONENT(disk));
 
     // 有効手の数
-    int valid_moves = count_valid_moves(disk, board);
+    int valid_moves = count_valid_moves(board, disk);
 
     return diff_disk + 2 * valid_moves;
 }
@@ -34,7 +34,7 @@ int negaalpha(Board *board,
     bool had_valid_move = false;
 
     for (int i = 0; i < SQUARE_LENGTH; i++) {
-        if (is_valid(TO_X(i), TO_Y(i), current_turn, board)) {
+        if (is_valid(board, current_turn, TO_X(i), TO_Y(i))) {
             put_and_flip(board, current_turn, i);
 
             had_valid_move = true;
@@ -62,7 +62,7 @@ int negaalpha(Board *board,
     // 先読み中有効手がないとき
     if (!had_valid_move) {
         // ゲーム終了のとき評価値を返す
-        if (!has_valid_move(OPPONENT(current_turn), board)) {
+        if (!has_valid_move(board, OPPONENT(current_turn))) {
             alpha = evaluate(current_turn, board);
         } else {
             // パスのとき手番を次に回す

@@ -72,7 +72,7 @@ void input(Board* board, Operator* op) {
             y = TO_INT_Y(input[1]);
 
             // 石の設置判定
-            if (is_valid(x, y, board->current_turn, board)) {
+            if (is_valid(board, board->current_turn, x, y)) {
                 break;
             } else {
                 printf("cannot put: retry\n");

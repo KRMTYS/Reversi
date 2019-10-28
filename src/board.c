@@ -47,27 +47,27 @@ void init_board(Board *board) {
     board->sp = board->stack;
 }
 
-bool is_valid(int x, int y, Disk disk, Board *board) {
+bool is_valid(Board *board, Disk disk, int x, int y) {
     if (!is_on_board(x, y) || !is_empty(x, y, board)) {
         return false;
     }
 
-    if (count_flip_disks(TO_POS(x, y), disk, board) > 0) {
+    if (count_flip_disks(board, disk, TO_POS(x, y)) > 0) {
         return true;
     }
 
     return false;
 }
 
-bool has_valid_move(Disk disk, Board *board) {
-    return (count_valid_moves(disk, board) > 0) ? true : false;
+bool has_valid_move(Board *board, Disk disk) {
+    return (count_valid_moves(board, disk) > 0) ? true : false;
 }
 
-int count_valid_moves(Disk disk, Board *board) {
+int count_valid_moves(Board *board, Disk disk) {
     int count = 0;
 
     for (int i = 0; i < SQUARE_LENGTH; i++) {
-        if (is_valid(TO_X(i), TO_Y(i), disk, board)) {
+        if (is_valid(board, disk, TO_X(i), TO_Y(i))) {
             count++;
         }
     }
@@ -83,9 +83,9 @@ void change_turn(Board *board, int n) {
 State get_state(Board *board) {
     Disk current = board->current_turn;
 
-    if (has_valid_move(current, board)) {
+    if (has_valid_move(board, current)) {
         return DO_TURN;
-    } else if (has_valid_move(OPPONENT(current), board)) {
+    } else if (has_valid_move(board, OPPONENT(current))) {
         change_turn(board, 0);
         return PASS;
     }
@@ -93,7 +93,7 @@ State get_state(Board *board) {
     return FINISH;
 }
 
-static int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board *board) {
+static int count_flip_disks_line(Board *board, Disk disk, Pos pos, Dir dir) {
     int count = 0;
 
     // 同色石まで探索
@@ -109,17 +109,17 @@ static int count_flip_disks_line(Pos pos, Disk disk, Dir dir, Board *board) {
     return count;
 }
 
-int count_flip_disks(Pos pos, Disk disk, Board *board) {
+int count_flip_disks(Board *board, Disk disk, Pos pos) {
     int count = 0;
 
-    count += count_flip_disks_line(pos, disk, UPPER, board);
-    count += count_flip_disks_line(pos, disk, UPPER_RIGHT, board);
-    count += count_flip_disks_line(pos, disk, UPPER_LEFT, board);
-    count += count_flip_disks_line(pos, disk, RIGHT, board);
-    count += count_flip_disks_line(pos, disk, LEFT, board);
-    count += count_flip_disks_line(pos, disk, LOWER, board);
-    count += count_flip_disks_line(pos, disk, LOWER_RIGHT, board);
-    count += count_flip_disks_line(pos, disk, LOWER_LEFT, board);
+    count += count_flip_disks_line(board, disk, pos, UPPER);
+    count += count_flip_disks_line(board, disk, pos, UPPER_RIGHT);
+    count += count_flip_disks_line(board, disk, pos, UPPER_LEFT);
+    count += count_flip_disks_line(board, disk, pos, RIGHT);
+    count += count_flip_disks_line(board, disk, pos, LEFT);
+    count += count_flip_disks_line(board, disk, pos, LOWER);
+    count += count_flip_disks_line(board, disk, pos, LOWER_RIGHT);
+    count += count_flip_disks_line(board, disk, pos, LOWER_LEFT);
 
     return count;
 }
@@ -212,7 +212,7 @@ void print_board(Board *board) {
                     printf(BLACK_STR);
                     break;
                 default:
-                    if (is_valid(x, y, board->current_turn, board)) {
+                    if (is_valid(board, board->current_turn, x, y)) {
                         printf(VALID_STR);
                     }
                     else {

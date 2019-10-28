@@ -86,12 +86,12 @@ typedef struct {
 void init_board(Board *board);
 
 // 有効手か
-bool is_valid(int x, int y, Disk disk, Board *board);
+bool is_valid(Board *board, Disk disk, int x, int y);
 
 // 有効手を持つか
-bool has_valid_move(Disk disk, Board *board);
+bool has_valid_move(Board *board, Disk disk);
 // 有効手を数える
-int count_valid_moves(Disk disk, Board *board);
+int count_valid_moves(Board *board, Disk disk);
 
 // 手番の変更
 void change_turn(Board *board, int n);
@@ -100,7 +100,7 @@ void change_turn(Board *board, int n);
 State get_state(Board *board);
 
 // ある座標に置くとき返せる石数を調べる
-int count_flip_disks(Pos pos, Disk disk, Board *board);
+int count_flip_disks(Board *board, Disk disk, Pos pos);
 
 // 石数を数える
 int count_disks(Board *board, Disk disk);
