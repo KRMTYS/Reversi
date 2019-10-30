@@ -33,8 +33,8 @@ int negaalpha(Board *board,
 
     bool had_valid_move = false;
 
-    for (int i = 0; i < SQUARE_LENGTH; i++) {
-        if (is_valid(board, current_turn, TO_X(i), TO_Y(i))) {
+    for (int i = 0; i < BOARD_LENGTH; i++) {
+        if (is_valid(board, current_turn, i)) {
             put_and_flip(board, current_turn, i);
 
             had_valid_move = true;

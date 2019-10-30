@@ -4,16 +4,16 @@
 #include <stdbool.h>
 
 // 盤面の幅
-#define SQUARE_SIZE 8
+#define BOARD_SIZE 8
 // 盤面長（番兵含む）
-#define SQUARE_LENGTH 91
+#define BOARD_LENGTH 91
 
 // 座標インデックスへの変換
-#define TO_POS(x, y)    ((y) * (SQUARE_SIZE + 1) + (x))
+#define TO_POS(x, y)    ((y) * (BOARD_SIZE + 1) + (x))
 
 // x-y座標への変換
-#define TO_X(p)         ((p) % (SQUARE_SIZE + 1))
-#define TO_Y(p)         ((int)((p) / (SQUARE_SIZE + 1)))
+#define TO_X(p)         ((p) % (BOARD_SIZE + 1))
+#define TO_Y(p)         ((int)((p) / (BOARD_SIZE + 1)))
 
 // 逆の色を返す
 #define OPPONENT(c)     (-1 * (c))
@@ -69,7 +69,7 @@ typedef enum {
 // 盤
 typedef struct {
     // 盤面
-    Disk square[SQUARE_LENGTH];
+    Disk squares[BOARD_LENGTH];
     // 手番
     Disk current_turn;
     // 手番数
@@ -86,7 +86,7 @@ typedef struct {
 void init_board(Board *board);
 
 // 有効手か
-bool is_valid(Board *board, Disk disk, int x, int y);
+bool is_valid(Board *board, Disk disk, Pos pos);
 
 // 有効手を持つか
 bool has_valid_move(Board *board, Disk disk);
