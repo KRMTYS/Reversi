@@ -131,14 +131,13 @@ int main(int argc, char *argv[]) {
     while (true) {
         print_board(&board);
 
-        State state = get_state(&board);
-
-        if (state == DO_TURN) {
+        if (has_valid_move(&board, board.current_turn)) {
             input(&board, op);
-        } else if (state == PASS) {
-            printf("Pass\n");
+        } else if (has_valid_move(&board, OPPONENT(board.current_turn))) {
+            printf("pass\n");
+            change_turn(&board, 1);
         } else {
-            printf("Finish\n\n");
+            printf("finish\n\n");
             break;
         }
     }

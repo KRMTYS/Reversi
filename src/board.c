@@ -80,17 +80,14 @@ void change_turn(Board *board, int n) {
     board->turn += n;
 }
 
-State get_state(Board *board) {
-    Disk current = board->current_turn;
-
-    if (has_valid_move(board, current)) {
-        return DO_TURN;
-    } else if (has_valid_move(board, OPPONENT(current))) {
-        change_turn(board, 0);
-        return PASS;
+bool can_play(Board *board) {
+    if (!has_valid_move(board, board->current_turn)) {
+        if (!has_valid_move(board, OPPONENT(board->current_turn))) {
+            return false;
+        }
     }
 
-    return FINISH;
+    return true;
 }
 
 static int count_flip_disks_line(Board *board, Disk disk, Pos pos, Dir dir) {

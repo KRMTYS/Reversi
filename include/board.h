@@ -59,13 +59,6 @@ typedef enum {
     LOWER_LEFT  =   8  // 左下
 } Dir;
 
-// 手番状態
-typedef enum {
-    DO_TURN,
-    PASS,
-    FINISH
-} State;
-
 // 盤
 typedef struct {
     // 盤面
@@ -95,9 +88,6 @@ int count_valid_moves(Board *board, Disk disk);
 
 // 手番の変更
 void change_turn(Board *board, int n);
-
-// パス/終了判定
-State get_state(Board *board);
 
 // ある座標に置くとき返せる石数を調べる
 int count_flip_disks(Board *board, Disk disk, Pos pos);
