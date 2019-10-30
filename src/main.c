@@ -29,9 +29,7 @@ typedef enum {
 } Operator;
 
 // プロンプト表示
-void show_prompt(int turn_num, Disk current_turn) {
-    printf("[%d] ", turn_num);
-
+void show_prompt(Disk current_turn) {
     if (current_turn == BLACK) {
         printf("Black(@) >> ");
     } else {
@@ -55,9 +53,9 @@ void judge(Board *board) {
 
 // 入力
 void input(Board* board, Operator* op) {
-    int index = (board->current_turn == BLACK) ? 0 : 1;
+    int index = (board->turn == BLACK) ? 0 : 1;
 
-    show_prompt(board->turn, board->current_turn);
+    show_prompt(board->turn);
 
     // PLAYER
     if (op[index] == PLAYER) {
@@ -72,22 +70,21 @@ void input(Board* board, Operator* op) {
             y = TO_INT_Y(input[1]);
 
             // 石の設置判定
-            if (is_valid(board, board->current_turn, TO_POS(x, y))) {
+            if (is_valid(board, board->turn, TO_POS(x, y))) {
                 break;
             } else {
-                printf("cannot put: retry\n");
-                show_prompt(board->turn, board->current_turn);
+                show_prompt(board->turn);
             }
         }
-        put_and_flip(board, board->current_turn, TO_POS(x, y));
+        put_and_flip(board, board->turn, TO_POS(x, y));
     // COM
     } else {
-        Pos move = search_move(board, board->current_turn, SEARCH_LEVEL);
+        Pos move = search_move(board, board->turn, SEARCH_LEVEL);
 
         // プレイヤーと同様に入力座標を表示
         printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));
 
-        put_and_flip(board, board->current_turn, move);
+        put_and_flip(board, board->turn, move);
     }
 
     printf("\n");
@@ -131,11 +128,11 @@ int main(int argc, char *argv[]) {
     while (true) {
         print_board(&board);
 
-        if (has_valid_move(&board, board.current_turn)) {
+        if (has_valid_move(&board, board.turn)) {
             input(&board, op);
-        } else if (has_valid_move(&board, OPPONENT(board.current_turn))) {
+        } else if (has_valid_move(&board, OPPONENT(board.turn))) {
             printf("pass\n");
-            change_turn(&board, 1);
+            change_turn(&board);
         } else {
             printf("finish\n\n");
             break;

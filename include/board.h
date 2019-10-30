@@ -64,9 +64,7 @@ typedef struct {
     // 盤面
     Disk squares[BOARD_LENGTH];
     // 手番
-    Disk current_turn;
-    // 手番数
-    int turn;
+    Disk turn;
     // 手番を記録するスタック
     // (返した石の位置1), ... , (返した石の数), (置いた石の位置)
     // の順に記録される
@@ -87,7 +85,7 @@ bool has_valid_move(Board *board, Disk disk);
 int count_valid_moves(Board *board, Disk disk);
 
 // 手番の変更
-void change_turn(Board *board, int n);
+void change_turn(Board *board);
 
 // ある座標に置くとき返せる石数を調べる
 int count_flip_disks(Board *board, Disk disk, Pos pos);

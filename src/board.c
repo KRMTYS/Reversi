@@ -34,10 +34,8 @@ void init_board(Board *board) {
     board->squares[E4] = BLACK;
     board->squares[E5] = WHITE;
 
-    // 黒先攻
-    board->current_turn = BLACK;
-
-    board->turn = 1;
+    // 専攻は黒
+    board->turn = BLACK;
 
     // スタックの初期化
     for (int i = 0; i < STACK_LENGTH; i++) {
@@ -75,14 +73,13 @@ int count_valid_moves(Board *board, Disk disk) {
     return count;
 }
 
-void change_turn(Board *board, int n) {
-    board->current_turn = OPPONENT(board->current_turn);
-    board->turn += n;
+void change_turn(Board *board) {
+    board->turn = OPPONENT(board->turn);
 }
 
 bool can_play(Board *board) {
-    if (!has_valid_move(board, board->current_turn)) {
-        if (!has_valid_move(board, OPPONENT(board->current_turn))) {
+    if (!has_valid_move(board, board->turn)) {
+        if (!has_valid_move(board, OPPONENT(board->turn))) {
             return false;
         }
     }
@@ -176,7 +173,7 @@ int put_and_flip(Board *board, Disk disk, Pos pos) {
     push_stack(board, count);
     push_stack(board, pos);
 
-    change_turn(board, 1);
+    change_turn(board);
 
     return count;
 }
@@ -190,7 +187,7 @@ void undo(Board *board) {
         board->squares[pop_stack(board)] *= -1;
     }
 
-    change_turn(board, -1);
+    change_turn(board);
 }
 
 void print_board(Board *board) {
@@ -209,7 +206,7 @@ void print_board(Board *board) {
                     printf(BLACK_STR);
                     break;
                 default:
-                    if (is_valid(board, board->current_turn, TO_POS(x, y))) {
+                    if (is_valid(board, board->turn, TO_POS(x, y))) {
                         printf(VALID_STR);
                     }
                     else {
