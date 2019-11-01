@@ -77,16 +77,6 @@ void change_turn(Board *board) {
     board->turn = OPPONENT(board->turn);
 }
 
-bool can_play(Board *board) {
-    if (!has_valid_move(board, board->turn)) {
-        if (!has_valid_move(board, OPPONENT(board->turn))) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
 static int count_flip_disks_line(Board *board, Disk disk, Pos pos, Dir dir) {
     int count = 0;
 
