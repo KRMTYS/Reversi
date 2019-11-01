@@ -8,25 +8,19 @@
 #include "evaluation.h"
 
 const char option_str[] = "options:\n \
-    -b) start with black (first turn, by default)\n \
-    -w) start with white (second turn)\n \
+    -b) play with BLACK (first turn, by default)\n \
+    -w) play with WHITE (second turn)\n \
     -c) COM vs COM\n \
-    -h) show this strings\n";
+    -h) show this help\n";
 
 // 探索レベル
 #define SEARCH_LEVEL 5
 
 // 座標値-文字間変換
-#define TO_INT_X(c)     ((c) - 0x60)
-#define TO_INT_Y(c)     ((c) - 0x30)
-#define TO_CHAR_X(x)    ((x) + 0x60)
-#define TO_CHAR_Y(y)    ((y) + 0x30)
-
-// 操作者
-typedef enum {
-    PLAYER, // プレイヤー 
-    COM     // COM
-} Operator;
+#define TO_INT_X(c)  (toupper((c)) - 'A' + 1)
+#define TO_INT_Y(c)  ((c) - '0')
+#define TO_CHAR_X(x) ((x) + 'A' - 1)
+#define TO_CHAR_Y(y) ((y) + '0')
 
 // プロンプト表示
 void show_prompt(Disk current_turn) {
@@ -37,78 +31,59 @@ void show_prompt(Disk current_turn) {
     }
 }
 
+// プレイヤーの入力を取得
+Pos get_input(Board *board) {
+    Pos move;
+
+    while (true) {
+        // col + row + '\0'
+        char input[3];
+        fgets(input, sizeof(input), stdin);
+
+        if(!feof(stdin)) {
+            // 標準出力に残る文字を読み飛ばす
+            while (getchar() != '\n');
+        }
+
+        int x = TO_INT_X(input[0]);
+        int y = TO_INT_Y(input[1]);
+
+        move = TO_POS(x, y);
+
+        // 石の設置判定
+        if (is_valid(board, board->turn, move)) {
+            break;
+        } else {
+            show_prompt(board->turn);
+        }
+    }
+
+    return move;
+}
+
 // 勝敗判定
 void judge(Board *board) {
     int n_black = count_disks(board, BLACK);
     int n_white = count_disks(board, WHITE);
 
     if (n_black > n_white) {
-        printf("* Black Wins *\n");
+        printf("*** BLACK wins ***\n");
     } else if (n_black < n_white) {
-        printf("* White Wins *\n");
+        printf("*** WHITE wins ***\n");
     } else {
-        printf("* Draw *\n");
+        printf("*** draw ***\n");
     }
-}
-
-// 入力
-void input(Board* board, Operator* op) {
-    int index = (board->turn == BLACK) ? 0 : 1;
-
-    show_prompt(board->turn);
-
-    // PLAYER
-    if (op[index] == PLAYER) {
-        // 入力バッファ長は適当
-        char input[10];
-        int x, y;
-
-        while (true) {
-            fgets(input, sizeof(input), stdin);
-            fflush(stdin);
-            x = TO_INT_X(tolower(input[0]));
-            y = TO_INT_Y(input[1]);
-
-            // 石の設置判定
-            if (is_valid(board, board->turn, TO_POS(x, y))) {
-                break;
-            } else {
-                show_prompt(board->turn);
-            }
-        }
-        put_and_flip(board, board->turn, TO_POS(x, y));
-    // COM
-    } else {
-        Pos move = search_move(board, board->turn, SEARCH_LEVEL);
-
-        // プレイヤーと同様に入力座標を表示
-        printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));
-
-        put_and_flip(board, board->turn, move);
-    }
-
-    printf("\n");
 }
 
 int main(int argc, char *argv[]) {
-    // 順に黒番、白番
-    Operator op[2] = { PLAYER, COM };
+    Disk player = BLACK;
 
     int opt;
     while ((opt = getopt(argc, argv, "bwch")) != -1) {
         switch (opt) {
-            case 'b':
-                op[0] = PLAYER;
-                op[1] = COM;
-                break;
-            case 'w':
-                op[0] = COM;
-                op[1] = PLAYER;
-                break;
-            case 'c':
-                op[0] = COM;
-                op[1] = COM;
-                break;
+            case 'b': player = BLACK; break;
+            case 'w': player = WHITE; break;
+            case 'c': player = EMPTY; break;
             case 'h':
                 printf(option_str);
                 return 0;
@@ -129,12 +104,22 @@ int main(int argc, char *argv[]) {
         print_board(&board);
 
         if (has_valid_move(&board, board.turn)) {
-            input(&board, op);
+            show_prompt(board.turn);
+
+            Pos move;
+            if (board.turn == player) {
+                move = get_input(&board);
+            } else {
+                move = search_move(&board, board.turn, SEARCH_LEVEL);
+
+                // プレイヤーと同様に入力座標を表示
+                printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));
+            }
+            put_and_flip(&board, board.turn, move);
         } else if (has_valid_move(&board, OPPONENT(board.turn))) {
             printf("pass\n");
             change_turn(&board);
         } else {
-            printf("finish\n\n");
             break;
         }
     }
