@@ -3,7 +3,7 @@
 
 #include "board.h"
 
-// 探索した手の取得
-Pos search_move(Board *board, Disk self_disk, int depth);
+// 評価関数
+int evaluate(Board *board, Disk disk);
 
 #endif // EVALUATION_H_

@@ -5,7 +5,7 @@
 #include <getopt.h>
 
 #include "board.h"
-#include "evaluation.h"
+#include "com.h"
 
 const char option_str[] = "options:\n \
     -b) play with BLACK (first turn, by default)\n \
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
             if (board.turn == player) {
                 move = get_input(&board);
             } else {
-                move = search_move(&board, board.turn, SEARCH_LEVEL);
+                move = com_search_move(&board, board.turn, SEARCH_LEVEL);
 
                 // プレイヤーと同様に入力座標を表示
                 printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));
