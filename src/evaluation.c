@@ -3,34 +3,31 @@
 #include <limits.h>
 
 // 評価関数
-int evaluate(Board *board, Disk disk) {
-    // 石数の差
-    int diff_disk = count_disks(board, disk) - count_disks(board, OPPONENT(disk));
-
-    // 有効手の数
+static int evaluate(Board *board, Disk disk) {
+    int diff_disk   = count_disks(board, disk) - count_disks(board, OPPONENT(disk));
     int valid_moves = count_valid_moves(board, disk);
 
+    // 評価値: 石数の差 + 2 * 有効手数
     return diff_disk + 2 * valid_moves;
 }
 
 // NegaAlpha法による探索
-int negaalpha(Board *board,
-              Disk self_disk, Disk current_turn,
-              Pos *next_move,
-              int alpha, int beta,
-              int depth) {
+static int negaalpha(Board *board,
+                     Disk self, Disk current_turn,
+                     Pos *next_move,
+                     int alpha, int beta, int depth) {
+    // 再帰探索の末尾
     if (depth == 0) {
-        if (self_disk == current_turn) {
+        if (self == current_turn) {
+            // 盤面の評価値を返す
             return evaluate(board, current_turn);
-        }
-        // 相手の手番では負の評価値を返す
-        else {
+        } else {
+            // 相手の手番では負の評価値を返す
             return -evaluate(board, current_turn);
         }
     }
 
     Pos move;
-
     bool had_valid_move = false;
 
     for (int i = 0; i < BOARD_LENGTH; i++) {
@@ -39,19 +36,20 @@ int negaalpha(Board *board,
 
             had_valid_move = true;
 
+            // 再帰探索
             int score = -negaalpha(board,
-                                   self_disk, OPPONENT(current_turn),
+                                   self, OPPONENT(current_turn),
                                    next_move,
-                                   -beta, -alpha,
-                                   (depth - 1));
+                                   -beta, -alpha, (depth - 1));
 
             undo(board);
 
+            // alphaカット: 下限値での枝狩り
             if (score > alpha) {
                 alpha = score;
                 move = i;
 
-                // betaカット
+                // betaカット: 上限値での枝狩り
                 if (alpha >= beta) {
                     return beta;
                 }
@@ -59,18 +57,17 @@ int negaalpha(Board *board,
         }
     }
 
-    // 先読み中有効手がないとき
+    // 有効手がないとき
     if (!had_valid_move) {
-        // ゲーム終了のとき評価値を返す
         if (!has_valid_move(board, OPPONENT(current_turn))) {
+            // ゲーム終了: 評価値を返す
             alpha = evaluate(board, current_turn);
         } else {
-            // パスのとき手番を次に回す
+            // パス: 手番を変更して探索を続ける
             alpha = -negaalpha(board,
-                               self_disk, OPPONENT(current_turn),
+                               self, OPPONENT(current_turn),
                                next_move,
-                               -beta, -alpha,
-                               (depth - 1));
+                               -beta, -alpha, (depth - 1));
         }
     }
 
@@ -82,7 +79,7 @@ int negaalpha(Board *board,
 Pos search_move(Board *board, Disk self_disk, int depth) {
     Pos next_move;
 
-    //negaalpha(&next_move, self_disk, self_disk, -INT_MAX, INT_MAX, depth, board);
+    // NegaAlpha法による探索
     negaalpha(board, self_disk, self_disk, &next_move, -INT_MAX, INT_MAX, depth);
 
     return next_move;
