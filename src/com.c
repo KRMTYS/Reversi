@@ -1,5 +1,7 @@
 #include "com.h"
 
+#include "eval.h"
+
 #include <limits.h>
 
 // NegaAlpha法による探索
