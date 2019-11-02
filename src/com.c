@@ -1,15 +1,18 @@
 #include "com.h"
 
+#include <limits.h>
+
 #include "eval.h"
 
-#include <limits.h>
+// 先読みする手数
+#define SEARCH_DEPTH 6
 
 // NegaAlpha法による探索
 static int negaalpha(Board *board,
                      Disk self, Disk current_turn,
                      Pos *next_move,
                      int alpha, int beta, int depth) {
-    // 再帰探索の末尾
+    // 再帰探索の末端
     if (depth == 0) {
         if (self == current_turn) {
             // 盤面の評価値を返す
@@ -37,12 +40,12 @@ static int negaalpha(Board *board,
 
             undo(board);
 
-            // alphaカット: 下限値での枝狩り
+            // alphaカット: 下限値での枝刈り
             if (score > alpha) {
                 alpha = score;
                 move = i;
 
-                // betaカット: 上限値での枝狩り
+                // betaカット: 上限値での枝刈り
                 if (alpha >= beta) {
                     return beta;
                 }
@@ -69,11 +72,11 @@ static int negaalpha(Board *board,
     return alpha;
 }
 
-Pos com_search_move(Board *board, Disk self_disk, int depth) {
+Pos com_search_move(Board *board, Disk self_disk) {
     Pos next_move;
 
     // NegaAlpha法による探索
-    negaalpha(board, self_disk, self_disk, &next_move, -INT_MAX, INT_MAX, depth);
+    negaalpha(board, self_disk, self_disk, &next_move, -INT_MAX, INT_MAX, SEARCH_DEPTH);
 
     return next_move;
 }

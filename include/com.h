@@ -4,6 +4,6 @@
 #include "board.h"
 
 // 手の探索と取得
-Pos com_search_move(Board *board, Disk self_disk, int depth);
+Pos com_search_move(Board *board, Disk self_disk);
 
 #endif // COM_H_

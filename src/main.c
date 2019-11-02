@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <limits.h>
 #include <getopt.h>
 
 #include "board.h"
@@ -12,9 +11,6 @@ const char option_str[] = "options:\n \
     -w) play with WHITE (second turn)\n \
     -c) COM vs COM\n \
     -h) show this help\n";
-
-// 探索レベル
-#define SEARCH_LEVEL 5
 
 // 座標値-文字間変換
 #define TO_INT_X(c)  (toupper((c)) - 'A' + 1)
@@ -110,7 +106,7 @@ int main(int argc, char *argv[]) {
             if (board.turn == player) {
                 move = get_input(&board);
             } else {
-                move = com_search_move(&board, board.turn, SEARCH_LEVEL);
+                move = com_search_move(&board, board.turn);
 
                 // プレイヤーと同様に入力座標を表示
                 printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));
