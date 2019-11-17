@@ -1,3 +1,9 @@
+///
+/// @file   com.c
+/// @brief  COMの手番動作
+/// @author kentakuramochi
+///
+
 #include "com.h"
 
 #include <limits.h>

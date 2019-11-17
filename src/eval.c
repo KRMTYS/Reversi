@@ -1,3 +1,9 @@
+///
+/// @file   eval.c
+/// @brief  盤面の評価
+/// @author kentakuramochi
+///
+
 #include "eval.h"
 
 #include <limits.h>
