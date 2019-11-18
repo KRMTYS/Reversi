@@ -10,10 +10,24 @@
 
 #include "eval.h"
 
-// 先読みする手数
+///
+/// @def    SEARCH_DEPTH
+/// @brief  探索する手番数
+///
 #define SEARCH_DEPTH 6
 
-// NegaAlpha法による探索
+///
+/// @fn     negaalpha
+/// @brief  NegaAlpha法による再帰探索
+/// @param[in]  board           盤面
+/// @param[in]  self            COMの手番色
+/// @param[in]  current_turn    現在の手番色
+/// @param[out] next_move       次手の座標
+/// @param[in]  alpha           alphaカット閾値
+/// @param[in]  beta            betaカット閾値
+/// @param[in]  depth           残りの探索深さ
+/// @return 盤面の評価値
+///
 static int negaalpha(Board *board,
                      Disk self, Disk current_turn,
                      Pos *next_move,

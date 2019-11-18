@@ -11,9 +11,9 @@
 
 /// 
 /// @fn     com_search_move
-/// @brief  有効手の探索と取得
-/// @param  board       [in]    盤面
-/// @param  serf_disk   [in]    手番
+/// @brief  COM側の有効手の探索
+/// @param[in]  board       盤面
+/// @param[in]  self_disk   手番
 /// @return COMの次手
 ///
 Pos com_search_move(Board *board, Disk self_disk);

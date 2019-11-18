@@ -12,8 +12,8 @@
 /// 
 /// @fn     evaluate
 /// @brief  評価値の計算
-/// @param  board   [in]    盤面
-/// @param  disk    [in]    手番
+/// @param[in]  board   盤面
+/// @param[in]  disk    手番
 /// @return 指定した手番の評価値
 ///
 int evaluate(Board *board, Disk disk);

@@ -1,3 +1,9 @@
+///
+/// @file   main.c
+/// @brief  リバーシメインルーチン
+/// @author kentakuramochi
+///
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -12,13 +18,33 @@ const char option_str[] = "options:\n \
     -c) COM vs COM\n \
     -h) show this help\n";
 
-// 座標値-文字間変換
+///
+/// @def    TO_INT_X
+/// @brief  列アルファベット表記-数値変換
+///
 #define TO_INT_X(c)  (toupper((c)) - 'A' + 1)
+///
+/// @def    TO_INT_Y
+/// @brief  行数表記-数値変換
+///
 #define TO_INT_Y(c)  ((c) - '0')
+
+///
+/// @def    TO_CHAR_X
+/// @brief  列数値-アルファベット表記変換
+///
 #define TO_CHAR_X(x) ((x) + 'A' - 1)
+///
+/// @def    TO_CHAR_Y
+/// @brief  行数値-数表記変換
+///
 #define TO_CHAR_Y(y) ((y) + '0')
 
-// プロンプト表示
+/// 
+/// @fn     show_prompt
+/// @brief  プロンプトの表示
+/// @param[in]  currnent_turn   現在の手番
+///
 void show_prompt(Disk current_turn) {
     if (current_turn == BLACK) {
         printf("Black(@) >> ");
@@ -27,7 +53,12 @@ void show_prompt(Disk current_turn) {
     }
 }
 
-// プレイヤーの入力を取得
+/// 
+/// @fn     get_input
+/// @brief  プレイヤー入力の取得
+/// @param[in]  board   盤面
+/// @return 入力に対応した座標インデックス（'A1' - 'H8'）
+///
 Pos get_input(Board *board) {
     Pos move;
 
@@ -57,7 +88,11 @@ Pos get_input(Board *board) {
     return move;
 }
 
-// 勝敗判定
+/// 
+/// @fn     judge
+/// @brief  勝敗の判定
+/// @param[in]  board   盤面
+///
 void judge(Board *board) {
     int n_black = count_disks(board, BLACK);
     int n_white = count_disks(board, WHITE);
@@ -91,7 +126,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // 盤面
     Board board;
 
     init_board(&board);
