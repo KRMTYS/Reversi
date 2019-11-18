@@ -1,3 +1,9 @@
+///
+/// @file   board.c
+/// @brief  リバーシ盤面の操作
+/// @author kentakuramochi
+///
+
 #include "board.h"
 
 #include <stdio.h>
@@ -11,10 +17,25 @@ static int pop_stack(Board *board) {
     return *(--board->sp);
 }
 
+///
+/// @fn     is_on_board
+/// @brief  座標の判定
+/// @param[in]  pos 座標
+/// @retval true    指定した座標は盤上である
+/// @retval false   指定した座標は盤上ではない
+///
 static bool is_on_board(Pos pos) {
     return ((pos >= A1) && (pos <= H8) && (pos % 9 != 0)) ? true : false;
 }
 
+///
+/// @fn     is_empty
+/// @brief  空マスの判定
+/// @param[in]  board   座標
+/// @param[in]  pos     座標
+/// @retval true    指定した座標は空マスである
+/// @retval false   指定した座標は空マスではない
+///
 static bool is_empty(Board *board, Pos pos) {
     return (board->squares[pos] == EMPTY) ? true : false;
 }
@@ -77,6 +98,15 @@ void change_turn(Board *board) {
     board->turn = OPPONENT(board->turn);
 }
 
+///
+/// @fn     count_flip_disks_line
+/// @brief  一方向の返せる石数のカウント
+/// @param[in]  board   盤面
+/// @param[in]  disk    手番
+/// @param[in]  pos     座標
+/// @param[in]  dir     探索方向
+/// @return 返せる石数
+///
 static int count_flip_disks_line(Board *board, Disk disk, Pos pos, Dir dir) {
     int count = 0;
 
@@ -120,6 +150,15 @@ int count_disks(Board *board, Disk disk) {
     return count;
 }
 
+///
+/// @fn     flip_line
+/// @brief  一方向の石を反転
+/// @param[in,out]  board   盤面
+/// @param[in]      disk    手番
+/// @param[in]      pos     座標
+/// @param[in]      dir     探索方向
+/// @return 返した石数
+///
 static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
     int count = 0;
     int n;
@@ -190,17 +229,17 @@ void print_board(Board *board) {
         for (int x = 1; x <= BOARD_SIZE; x++) {
             switch (board->squares[TO_POS(x, y)]) {
                 case WHITE:
-                    printf(WHITE_STR);
+                    printf("O ");
                     break;
                 case BLACK:
-                    printf(BLACK_STR);
+                    printf("@ ");
                     break;
                 default:
                     if (is_valid(board, board->turn, TO_POS(x, y))) {
-                        printf(VALID_STR);
+                        printf("* ");
                     }
                     else {
-                        printf(EMPTY_STR);
+                        printf("- ");
                     }
                     break;
             }
