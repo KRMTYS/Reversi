@@ -18,28 +18,6 @@ const char option_str[] = "options:\n \
     -c) COM vs COM\n \
     -h) show this help\n";
 
-///
-/// @def    TO_INT_X
-/// @brief  列アルファベット表記-数値変換
-///
-#define TO_INT_X(c)  (toupper((c)) - 'A' + 1)
-///
-/// @def    TO_INT_Y
-/// @brief  行数表記-数値変換
-///
-#define TO_INT_Y(c)  ((c) - '0')
-
-///
-/// @def    TO_CHAR_X
-/// @brief  列数値-アルファベット表記変換
-///
-#define TO_CHAR_X(x) ((x) + 'A' - 1)
-///
-/// @def    TO_CHAR_Y
-/// @brief  行数値-数表記変換
-///
-#define TO_CHAR_Y(y) ((y) + '0')
-
 /// 
 /// @fn     show_prompt
 /// @brief  プロンプトの表示
@@ -57,9 +35,10 @@ void show_prompt(Disk current_turn) {
 /// @fn     get_input
 /// @brief  プレイヤー入力の取得
 /// @param[in]  board   盤面
+/// @param[in]  current 現在の手番
 /// @return 入力に対応した座標インデックス（'A1' - 'H8'）
 ///
-Pos get_input(Board *board) {
+Pos get_input(Board *board, Disk current) {
     Pos move;
 
     while (true) {
@@ -67,21 +46,18 @@ Pos get_input(Board *board) {
         char input[3];
         fgets(input, sizeof(input), stdin);
 
+        // 標準出力に残る文字を読み飛ばす
         if(!feof(stdin)) {
-            // 標準出力に残る文字を読み飛ばす
             while (getchar() != '\n');
         }
 
-        int x = TO_INT_X(input[0]);
-        int y = TO_INT_Y(input[1]);
-
-        move = TO_POS(x, y);
+        move = char_to_pos(input[0], input[1]);
 
         // 石の設置判定
-        if (is_valid(board, board->turn, move)) {
+        if (Board_check_valid(board, current, move)) {
             break;
         } else {
-            show_prompt(board->turn);
+            show_prompt(current);
         }
     }
 
@@ -94,8 +70,8 @@ Pos get_input(Board *board) {
 /// @param[in]  board   盤面
 ///
 void judge(Board *board) {
-    int n_black = count_disks(board, BLACK);
-    int n_white = count_disks(board, WHITE);
+    int n_black = Board_count_disk(board, BLACK);
+    int n_white = Board_count_disk(board, WHITE);
 
     if (n_black > n_white) {
         printf("*** BLACK wins ***\n");
@@ -126,35 +102,41 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    Board board;
+    Board *board = Board_create();
 
-    init_board(&board);
+    Board_init(board);
+
+    Disk current = BLACK;
 
     while (true) {
-        print_board(&board);
+        Board_print(board, current);
 
-        if (has_valid_move(&board, board.turn)) {
-            show_prompt(board.turn);
+        if (Board_has_valid_move(&board, current)) {
+            show_prompt(current);
 
             Pos move;
-            if (board.turn == player) {
-                move = get_input(&board);
+            if (current == player) {
+                move = get_input(board, current);
             } else {
-                move = com_search_move(&board, board.turn);
-
+                move = com_search_move(&board, current);
                 // プレイヤーと同様に入力座標を表示
-                printf("%c%c\n", TO_CHAR_X(TO_X(move)), TO_CHAR_Y(TO_Y(move)));
+                printf("%c%c\n", get_col(move), get_row(move));
             }
-            put_and_flip(&board, board.turn, move);
-        } else if (has_valid_move(&board, OPPONENT(board.turn))) {
+
+            Board_put_and_flip(board, current, move);
+
+        } else if (Board_has_valid_move(board, OPPONENT(current))) {
             printf("pass\n");
-            change_turn(&board);
         } else {
             break;
         }
+
+        current = OPPONENT(current);
     }
 
-    judge(&board);
+    judge(board);
+
+    Board_delete(board);
 
     return 0;
 }

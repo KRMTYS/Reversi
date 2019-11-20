@@ -47,8 +47,8 @@ static int negaalpha(Board *board,
     bool had_valid_move = false;
 
     for (int i = 0; i < BOARD_LENGTH; i++) {
-        if (is_valid(board, current_turn, i)) {
-            put_and_flip(board, current_turn, i);
+        if (Board_check_valid(board, current_turn, i)) {
+            Board_put_and_flip(board, current_turn, i);
 
             had_valid_move = true;
 
@@ -58,7 +58,7 @@ static int negaalpha(Board *board,
                                    next_move,
                                    -beta, -alpha, (depth - 1));
 
-            undo(board);
+            Board_undo(board);
 
             // alphaカット: 下限値での枝刈り
             if (score > alpha) {
@@ -75,7 +75,7 @@ static int negaalpha(Board *board,
 
     // 有効手がないとき
     if (!had_valid_move) {
-        if (!has_valid_move(board, OPPONENT(current_turn))) {
+        if (!Board_has_valid_move(board, OPPONENT(current_turn))) {
             // ゲーム終了: 評価値を返す
             alpha = evaluate(board, current_turn);
         } else {

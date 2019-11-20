@@ -7,6 +7,7 @@
 #ifndef BOARD_H_
 #define BOARD_H_
 
+#include <ctype.h>
 #include <stdbool.h>
 
 ///
@@ -16,41 +17,14 @@
 #define BOARD_SIZE 8
 
 ///
-/// @def    BOARD_LENGTH
-/// @brief  番兵を含んだ盤面長
+/// @def    BOARD_SIZE
+/// @brief  番兵を含む盤面長
 ///
 #define BOARD_LENGTH 91
 
 ///
-/// @def    TO_POS
-/// @brief  行・列数-座標変換
-///
-#define TO_POS(x, y)    ((y) * (BOARD_SIZE + 1) + (x))
-
-///
-/// @def    TO_X
-/// @brief  座標-列数値変換
-///
-#define TO_X(p)         ((p) % (BOARD_SIZE + 1))
-
-///
-/// @def    TO_Y
-/// @brief  座標-行数値変換
-///
-#define TO_Y(p)         ((int)((p) / (BOARD_SIZE + 1)))
-
-///
-/// @def    OPPONENT
-/// @brief  逆手番の取得
-///
-#define OPPONENT(c)     (-1 * (c))
-
-// スタック長、適当
-#define STACK_LENGTH 60 * 20
-
-///
 /// @enum   Disk
-/// @brief  盤面上のマスの状態
+/// @brief  盤面上の石・マスの状態
 ///
 typedef enum {
     WHITE = -1, ///< 白石
@@ -58,6 +32,12 @@ typedef enum {
     BLACK =  1, ///< 黒石
     WALL  =  2  ///< 壁
 } Disk;
+
+///
+/// @def    OPPONENT
+/// @brief  逆の色を取得する
+///
+#define OPPONENT(disk)     (-1 * (disk))
 
 ///
 /// @enum   Pos
@@ -74,119 +54,134 @@ typedef enum {
     A8 = 73, B8, C8, D8, E8, F8, G8, H8
 } Pos;
 
-///
-/// @enum   Dir
-/// @brief  盤面上での8方向インデックス
-///
-typedef enum {
-    UPPER       =  -9,  ///< 上
-    UPPER_RIGHT =  -8,  ///< 右上
-    UPPER_LEFT  = -10,  ///< 左上
-    RIGHT       =   1,  ///< 右
-    LEFT        =  -1,  ///< 左
-    LOWER       =   9,  ///< 下
-    LOWER_RIGHT =  10,  ///< 右下
-    LOWER_LEFT  =   8   ///< 左下
-} Dir;
 
 ///
-/// @struct Board
-/// @brief  リバーシ盤面
+/// @fn     xy_to_pos
+/// @brief  座標値からインデックスを取得する
+/// @param[in]  x座標（1 - 8）
+/// @param[in]  y座標（1 - 8）
+/// @return 盤面上の座標インデックス（A1 - H8）
 ///
-typedef struct {
-    Disk squares[BOARD_LENGTH]; ///< マス
-    Disk turn;                  ///< 現在の手番
-    int stack[STACK_LENGTH];    ///< 手を記録するスタック
-                                ///< (返した石の位置1), ... , (返した石の数), (置いた石の位置)
-                                ///< の順に記録される
-    int *sp;                    ///< スタックポインタ
-} Board;
+inline Pos xy_to_pos(int x, int y) {
+    return x * (BOARD_SIZE + 1) + y;
+}
 
 ///
-/// @fn     init_board
-/// @brief  盤面の初期化
+/// @fn     char_to_pos
+/// @brief  座標文字列からインデックスを取得する
+/// @param[in]  col 列アルファベット（A - H）
+/// @param[in]  row 行番号（1 - 8）
+/// @return 盤面上の座標インデックス（A1 - H8）
+///
+inline Pos char_to_pos(char col, char row) {
+    return xy_to_pos((toupper(col) - 'A' + 1), (row - '0'));
+}
+
+inline char get_col(Pos pos) {
+    return (pos % (BOARD_SIZE + 1) + 'A' - 1);
+}
+
+inline char get_row(Pos pos) {
+    return (pos / (BOARD_SIZE + 1) + '0');
+}
+
+///
+/// @typedef    Board
+/// @brief      リバーシ盤面
+///
+typedef struct Board_ Board;
+
+///
+/// @fn     Board_create
+/// @brief  盤面を生成する
+///
+Board *Board_create(void);
+
+///
+/// @fn     Board_delete
+/// @brief  盤面を消去する
+/// @param[in]  board    盤面
+///
+Board *Board_delete(Board *board);
+
+///
+/// @fn     Board_init
+/// @brief  盤面を初期化する
 /// @param[in,out]  board    盤面
 ///
-void init_board(Board *board);
+void Board_init(Board *board);
 
 ///
-/// @fn     is_valid
-/// @brief  手が有効かの判定
+/// @fn     Board_check_valid
+/// @brief  手が有効か判定する
 /// @param[in]  board   盤面
 /// @param[in]  disk    手番
 /// @param[in]  pos     座標
 /// @retval true    指定した手は有効手である
 /// @retval false   指定した手は有効手ではない
 ///
-bool is_valid(Board *board, Disk disk, Pos pos);
+bool Board_check_valid(Board *board, Disk disk, Pos pos);
 
 ///
-/// @fn     has_valid_move
-/// @brief  有効手を持つかの判定
+/// @fn     Board_has_valid_move
+/// @brief  有効手があるか判定する
 /// @param[in]  board   盤面
 /// @param[in]  disk    手番
 /// @retval true    指定した手番が有効手を持つ
 /// @retval false   指定した手番が有効手を持たない
 ///
-bool has_valid_move(Board *board, Disk disk);
+bool Board_has_valid_move(Board *board, Disk disk);
 
 ///
-/// @fn     count_valid_moves
-/// @brief  有効手のカウント
+/// @fn     Board_count_valid_moves
+/// @brief  有効手を数える
 /// @param[in]  board   盤面
 /// @param[in]  disk    手番
 /// @return 指定した手番の有効手数
 ///
-int count_valid_moves(Board *board, Disk disk);
+int Board_count_valid_moves(Board *board, Disk disk);
 
 ///
-/// @fn     change_turn
-/// @brief  手番の変更
-/// @param[in,out]  board   盤面
+/// @fn     Board_count_disk
+/// @brief  石数を数える
+/// @param[in]  board   [in]    盤面
+/// @param[in]  disk    [in]    石
+/// @return 指定した石の数
 ///
-void change_turn(Board *board);
+int Board_count_disk(Board *board, Disk disk);
 
 ///
-/// @fn     count_flip_disks
-/// @brief  返せる石数のカウント
+/// @fn     Board_count_flip_disks
+/// @brief  返せる石数を数える
 /// @param[in]  board   盤面
 /// @param[in]  disk    手番
 /// @param[in]  pos     座標
 /// @return 指定した座標に石を置いたとき返せる石数
 ///
-int count_flip_disks(Board *board, Disk disk, Pos pos);
+int Board_count_flip_disks(Board *board, Disk disk, Pos pos);
 
 ///
-/// @fn     count_disks
-/// @brief  石数のカウント
-/// @param[in]  board   [in]    盤面
-/// @param[in]  disk    [in]    手番
-/// @return 指定した手番の石数
-///
-int count_disks(Board *board, Disk disk);
-
-///
-/// @fn     put_and_flip
+/// @fn     Board_put_and_flip
 /// @brief  石の設置と反転
 /// @param[in,out]  board   盤面
 /// @param[in]      disk    手番
 /// @param[in]      pos     座標
 /// @return 返した石数
 ///
-int put_and_flip(Board *board, Disk disk, Pos pos);
+int Board_put_and_flip(Board *board, Disk disk, Pos pos);
 
 ///
-/// @fn     undo
+/// @fn     Board_undo
 /// @brief  局面の巻き戻し
 /// @param[in,out]  board    盤面
 ///
-void undo(Board *board);
+void Board_undo(Board *board);
 
 ///
-/// @fn     print_board
-/// @brief  盤面の描画
+/// @fn     Board_print
+/// @brief  盤面を描画する
 /// @param[in]  board    盤面
 ///
-void print_board(Board *board);
+void Board_print(Board *board, Disk current);
 
 #endif // BOARD_H_
