@@ -20,11 +20,11 @@ const char option_str[] = "options:\n \
 
 /// 
 /// @fn     show_prompt
-/// @brief  プロンプトの表示
-/// @param[in]  currnent_turn   現在の手番
+/// @brief  プロンプトを表示する
+/// @param[in]  currnent   現在の手番
 ///
-void show_prompt(Disk current_turn) {
-    if (current_turn == BLACK) {
+void show_prompt(Disk current) {
+    if (current == BLACK) {
         printf("Black(@) >> ");
     } else {
         printf("White(O) >> ");
@@ -33,7 +33,7 @@ void show_prompt(Disk current_turn) {
 
 /// 
 /// @fn     get_input
-/// @brief  プレイヤー入力の取得
+/// @brief  プレイヤー入力を取得する
 /// @param[in]  board   盤面
 /// @param[in]  current 現在の手番
 /// @return 入力に対応した座標インデックス（'A1' - 'H8'）
@@ -51,7 +51,7 @@ Pos get_input(Board *board, Disk current) {
             while (getchar() != '\n');
         }
 
-        move = char_to_pos(input[0], input[1]);
+        move = CHAR2POS(input[0], input[1]);
 
         // 石の設置判定
         if (Board_check_valid(board, current, move)) {
@@ -66,7 +66,7 @@ Pos get_input(Board *board, Disk current) {
 
 /// 
 /// @fn     judge
-/// @brief  勝敗の判定
+/// @brief  勝敗を判定する
 /// @param[in]  board   盤面
 ///
 void judge(Board *board) {
@@ -110,17 +110,18 @@ int main(int argc, char *argv[]) {
 
     while (true) {
         Board_print(board, current);
+        printf("@:%2d O:%2d\n", Board_count_disk(board, BLACK), Board_count_disk(board, WHITE));
 
-        if (Board_has_valid_move(&board, current)) {
+        if (Board_has_valid_move(board, current)) {
             show_prompt(current);
 
             Pos move;
             if (current == player) {
                 move = get_input(board, current);
             } else {
-                move = com_search_move(&board, current);
+                move = COM_get_move(board, current);
                 // プレイヤーと同様に入力座標を表示
-                printf("%c%c\n", get_col(move), get_row(move));
+                printf("%c%c\n", POS2COL(move), POS2ROW(move));
             }
 
             Board_put_and_flip(board, current, move);

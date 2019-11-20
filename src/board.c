@@ -9,8 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "stack.h"
+
 // スタック長、適当
-#define STACK_LENGTH 60 * 20
+#define STACK_SIZE 60 * 20
 
 ///
 /// @struct Board_
@@ -18,10 +20,8 @@
 ///
 struct Board_ {
     Disk disks[BOARD_LENGTH]; ///< マス
-    int stack[STACK_LENGTH];  ///< 手を記録するスタック
-                              ///< (返した石の位置1), ... , (返した石の数), (置いた石の位置)
-                              ///< の順に記録される
-    int *sp;                  ///< スタックポインタ
+    Stack *stack;             ///< 手と返した石を記録するスタック
+                              ///< （返した石の位置1）、（返した石の数2）、... 、（置いた石の位置）
 };
 
 ///
@@ -39,23 +39,17 @@ typedef enum {
     LOWER_LEFT  =   8   ///< 左下
 } Dir;
 
-// スタック操作
-static void push_stack(Board *board, int n) {
-    *(board->sp++) = n;
-}
-
-static int pop_stack(Board *board) {
-    return *(--board->sp);
-}
-
-
 Board *Board_create(void) {
     Board *board = malloc(sizeof(Board));
+
+    board->stack = Stack_create(STACK_SIZE);
 
     return board;
 }
 
-Board *Board_delete(Board *board) {
+void Board_delete(Board *board) {
+    Stack_delete(board->stack);
+
     free(board);
     board = NULL;
 }
@@ -75,17 +69,12 @@ void Board_init(Board *board) {
     board->disks[E4] = BLACK;
     board->disks[E5] = WHITE;
 
-    // スタックの初期化
-    for (int i = 0; i < STACK_LENGTH; i++) {
-        board->stack[i] = 0;
-    }
-
-    board->sp = board->stack;
+    Stack_init(board->stack);
 }
 
 ///
 /// @fn     is_on_board
-/// @brief  座標の判定
+/// @brief  座標を判定する
 /// @param[in]  pos 座標
 /// @retval true    指定した座標は盤上である
 /// @retval false   指定した座標は盤上ではない
@@ -96,7 +85,7 @@ static bool is_on_board(Pos pos) {
 
 ///
 /// @fn     is_empty
-/// @brief  空マスの判定
+/// @brief  空きマスかを判定する
 /// @param[in]  board   座標
 /// @param[in]  pos     座標
 /// @retval true    指定した座標は空マスである
@@ -136,7 +125,7 @@ int Board_count_valid_moves(Board *board, Disk disk) {
 
 ///
 /// @fn     count_flip_disks_line
-/// @brief  一方向の返せる石数のカウント
+/// @brief  一方向に返せる石数を数える
 /// @param[in]  board   盤面
 /// @param[in]  disk    手番
 /// @param[in]  pos     座標
@@ -188,7 +177,7 @@ int Board_count_flip_disks(Board *board, Disk disk, Pos pos) {
 
 ///
 /// @fn     flip_line
-/// @brief  一方向の石を反転
+/// @brief  一方向に石を反転する
 /// @param[in,out]  board   盤面
 /// @param[in]      disk    手番
 /// @param[in]      pos     座標
@@ -214,7 +203,7 @@ static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
     // 石を返す
     while (n != (int)pos) {
         board->disks[n] = disk;
-        push_stack(board, n);
+        Stack_push(board->stack, n);
         n -= dir;
     }
 
@@ -235,19 +224,23 @@ int Board_put_and_flip(Board *board, Disk disk, Pos pos) {
 
     board->disks[pos] = disk;
 
-    push_stack(board, count);
-    push_stack(board, pos);
+    Stack_push(board->stack, count);
+    Stack_push(board->stack, pos);
 
     return count;
 }
 
 void Board_undo(Board *board) {
-    board->disks[pop_stack(board)] = EMPTY;
+    int move;
+    Stack_pop(board->stack, &move);
+    board->disks[move] = EMPTY;
 
-    int n = pop_stack(board);
+    int n;
+    Stack_pop(board->stack, &n);
 
     for (int i = 0; i < n; i++) {
-        board->disks[pop_stack(board)] *= -1;
+        Stack_pop(board->stack, &move);
+        board->disks[move] = OPPONENT(board->disks[move]);
     }
 }
 
@@ -258,11 +251,12 @@ void Board_print(Board *board, Disk current) {
     for (int y = 1; y <= BOARD_SIZE; y++) {
         printf("%d | ", y);
         for (int x = 1; x <= BOARD_SIZE; x++) {
-            switch (board->disks[xy_to_pos(x, y)]) {
+            Pos pos = XY2POS(x, y);
+            switch (board->disks[pos]) {
                 case WHITE: printf("O "); break;
                 case BLACK: printf("@ "); break;
                 default:
-                    if (Board_check_valid(board, current, xy_to_pos(x, y))) {
+                    if (Board_check_valid(board, current, pos)) {
                         printf("* ");
                     }
                     else {
@@ -271,10 +265,8 @@ void Board_print(Board *board, Disk current) {
                     break;
             }
         }
-
         printf("|\n");
     }
-    printf("  +-----------------+\n");
 
-    printf("@:%2d O:%2d\n", Board_count_disk(board, BLACK), Board_count_disk(board, WHITE));
+    printf("  +-----------------+\n");
 }

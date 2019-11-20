@@ -20,7 +20,7 @@
 /// @fn     negaalpha
 /// @brief  NegaAlpha法による再帰探索
 /// @param[in]  board           盤面
-/// @param[in]  self            COMの手番色
+/// @param[in]  com_turn        COMの手番色
 /// @param[in]  current_turn    現在の手番色
 /// @param[out] next_move       次手の座標
 /// @param[in]  alpha           alphaカット閾値
@@ -28,18 +28,15 @@
 /// @param[in]  depth           残りの探索深さ
 /// @return 盤面の評価値
 ///
-static int negaalpha(Board *board,
-                     Disk self, Disk current_turn,
-                     Pos *next_move,
-                     int alpha, int beta, int depth) {
+static int negaalpha(Board *board, Disk com_turn, Disk current_turn, Pos *next_move, int alpha, int beta, int depth) {
     // 再帰探索の末端
     if (depth == 0) {
-        if (self == current_turn) {
+        if (com_turn == current_turn) {
             // 盤面の評価値を返す
-            return evaluate(board, current_turn);
+            return Eval_evaluate(board, current_turn);
         } else {
             // 相手の手番では負の評価値を返す
-            return -evaluate(board, current_turn);
+            return -Eval_evaluate(board, current_turn);
         }
     }
 
@@ -53,10 +50,7 @@ static int negaalpha(Board *board,
             had_valid_move = true;
 
             // 再帰探索
-            int score = -negaalpha(board,
-                                   self, OPPONENT(current_turn),
-                                   next_move,
-                                   -beta, -alpha, (depth - 1));
+            int score = -negaalpha(board, com_turn, OPPONENT(current_turn), next_move, -beta, -alpha, (depth - 1));
 
             Board_undo(board);
 
@@ -77,13 +71,10 @@ static int negaalpha(Board *board,
     if (!had_valid_move) {
         if (!Board_has_valid_move(board, OPPONENT(current_turn))) {
             // ゲーム終了: 評価値を返す
-            alpha = evaluate(board, current_turn);
+            alpha = Eval_evaluate(board, current_turn);
         } else {
             // パス: 手番を変更して探索を続ける
-            alpha = -negaalpha(board,
-                               self, OPPONENT(current_turn),
-                               next_move,
-                               -beta, -alpha, (depth - 1));
+            alpha = -negaalpha(board, com_turn, OPPONENT(current_turn), next_move, -beta, -alpha, (depth - 1));
         }
     }
 
@@ -92,11 +83,11 @@ static int negaalpha(Board *board,
     return alpha;
 }
 
-Pos com_search_move(Board *board, Disk self_disk) {
+Pos COM_get_move(Board *board, Disk turn) {
     Pos next_move;
 
     // NegaAlpha法による探索
-    negaalpha(board, self_disk, self_disk, &next_move, -INT_MAX, INT_MAX, SEARCH_DEPTH);
+    negaalpha(board, turn, turn, &next_move, -INT_MAX, INT_MAX, SEARCH_DEPTH);
 
     return next_move;
 }

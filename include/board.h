@@ -54,36 +54,29 @@ typedef enum {
     A8 = 73, B8, C8, D8, E8, F8, G8, H8
 } Pos;
 
-
 ///
-/// @fn     xy_to_pos
+/// @fn     XY2POS
 /// @brief  座標値からインデックスを取得する
-/// @param[in]  x座標（1 - 8）
-/// @param[in]  y座標（1 - 8）
-/// @return 盤面上の座標インデックス（A1 - H8）
 ///
-inline Pos xy_to_pos(int x, int y) {
-    return x * (BOARD_SIZE + 1) + y;
-}
+#define XY2POS(x, y) ((x) * (BOARD_SIZE + 1) + (y))
 
 ///
-/// @fn     char_to_pos
-/// @brief  座標文字列からインデックスを取得する
-/// @param[in]  col 列アルファベット（A - H）
-/// @param[in]  row 行番号（1 - 8）
-/// @return 盤面上の座標インデックス（A1 - H8）
+/// @fn     CHAR2POS
+/// @brief  行・列文字からインデックスを取得する
 ///
-inline Pos char_to_pos(char col, char row) {
-    return xy_to_pos((toupper(col) - 'A' + 1), (row - '0'));
-}
+#define CHAR2POS(col, row) (XY2POS((toupper((col)) - 'A' + 1), ((row) - '0')))
 
-inline char get_col(Pos pos) {
-    return (pos % (BOARD_SIZE + 1) + 'A' - 1);
-}
+///
+/// @fn     POS2COL
+/// @brief  座標インデックスから列アルファベットを取得する
+///
+#define POS2COL(pos) ('A' + ((pos) % (BOARD_SIZE + 1) - 1))
 
-inline char get_row(Pos pos) {
-    return (pos / (BOARD_SIZE + 1) + '0');
-}
+///
+/// @fn     POS2ROW
+/// @brief  座標インデックスから行数を取得する
+///
+#define POS2ROW(pos) ('0' + ((pos) / (BOARD_SIZE + 1)))
 
 ///
 /// @typedef    Board
@@ -102,7 +95,7 @@ Board *Board_create(void);
 /// @brief  盤面を消去する
 /// @param[in]  board    盤面
 ///
-Board *Board_delete(Board *board);
+void Board_delete(Board *board);
 
 ///
 /// @fn     Board_init
@@ -162,7 +155,7 @@ int Board_count_flip_disks(Board *board, Disk disk, Pos pos);
 
 ///
 /// @fn     Board_put_and_flip
-/// @brief  石の設置と反転
+/// @brief  石を着手する
 /// @param[in,out]  board   盤面
 /// @param[in]      disk    手番
 /// @param[in]      pos     座標
@@ -172,7 +165,7 @@ int Board_put_and_flip(Board *board, Disk disk, Pos pos);
 
 ///
 /// @fn     Board_undo
-/// @brief  局面の巻き戻し
+/// @brief  局面を巻き戻す
 /// @param[in,out]  board    盤面
 ///
 void Board_undo(Board *board);

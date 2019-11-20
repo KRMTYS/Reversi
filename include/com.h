@@ -10,12 +10,12 @@
 #include "board.h"
 
 /// 
-/// @fn     com_search_move
+/// @fn     COM_get_move
 /// @brief  COM側の有効手の探索
-/// @param[in]  board       盤面
-/// @param[in]  self_disk   手番
+/// @param[in]  board   盤面
+/// @param[in]  turn    手番
 /// @return COMの次手
 ///
-Pos com_search_move(Board *board, Disk self_disk);
+Pos COM_get_move(Board *board, Disk turn);
 
 #endif // COM_H_
