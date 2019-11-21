@@ -72,6 +72,10 @@ void Board_init(Board *board) {
     Stack_init(board->stack);
 }
 
+Disk Board_disk(Board *board, Pos pos) {
+    return board->disks[pos];
+}
+
 ///
 /// @fn     is_on_board
 /// @brief  座標を判定する

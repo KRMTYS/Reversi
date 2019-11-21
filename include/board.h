@@ -105,6 +105,15 @@ void Board_delete(Board *board);
 void Board_init(Board *board);
 
 ///
+/// @fn     Board_disk
+/// @brief  盤面の状態を取得する
+/// @param[in]  board   盤面
+/// @param[in]  pos     座標
+/// @return 指定した座標の状態
+///
+Disk Board_disk(Board *board, Pos pos);
+
+///
 /// @fn     Board_check_valid
 /// @brief  手が有効か判定する
 /// @param[in]  board   盤面
