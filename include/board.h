@@ -27,17 +27,17 @@
 /// @brief  盤面上の石・マスの状態
 ///
 typedef enum {
-    WHITE = -1, ///< 白石
-    EMPTY =  0, ///< 空
-    BLACK =  1, ///< 黒石
-    WALL  =  2  ///< 壁
+    WALL  = -1, ///< 壁
+    BLACK =  0, ///< 黒石
+    WHITE =  1, ///< 白石
+    EMPTY =  2, ///< 空
 } Disk;
 
 ///
 /// @def    OPPONENT
 /// @brief  逆の色を取得する
 ///
-#define OPPONENT(disk)     (-1 * (disk))
+#define OPPONENT(disk)     (1 ^ (disk))
 
 ///
 /// @enum   Pos
