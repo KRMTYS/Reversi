@@ -6,15 +6,36 @@
 
 #include "com.h"
 
+#include <stdlib.h>
 #include <limits.h>
 
 #include "eval.h"
 
 ///
-/// @def    SEARCH_DEPTH
-/// @brief  探索する手番数
+/// @struct Com_
+/// @brief  COM思考ルーチン
 ///
-#define SEARCH_DEPTH 6
+struct Com_ {
+    Board *board;   ///< 盤面
+    int depth;      ///< 探索深さ
+};
+
+Com *Com_create(void) {
+    Com *com = malloc(sizeof(Com));
+
+    com->depth = 6;
+
+    return com;
+}
+
+void Com_delete(Com *com) {
+    if (com == NULL) {
+        return NULL;
+    }
+
+    free(com);
+    com = NULL;
+}
 
 ///
 /// @fn     negaalpha
@@ -83,11 +104,11 @@ static int negaalpha(Board *board, Disk com_turn, Disk current_turn, Pos *next_m
     return alpha;
 }
 
-Pos COM_get_move(Board *board, Disk turn) {
+Pos Com_get_move(Com *com, Board *board, Disk turn) {
     Pos next_move;
 
     // NegaAlpha法による探索
-    negaalpha(board, turn, turn, &next_move, -INT_MAX, INT_MAX, SEARCH_DEPTH);
+    negaalpha(board, turn, turn, &next_move, -INT_MAX, INT_MAX, com->depth);
 
     return next_move;
 }

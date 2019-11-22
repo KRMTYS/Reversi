@@ -106,6 +106,8 @@ int main(int argc, char *argv[]) {
 
     Board_init(board);
 
+    Com *com = Com_create();
+
     Disk current = BLACK;
 
     while (true) {
@@ -119,7 +121,7 @@ int main(int argc, char *argv[]) {
             if (current == player) {
                 move = get_input(board, current);
             } else {
-                move = COM_get_move(board, current);
+                move = Com_get_move(com, board, current);
                 // プレイヤーと同様に入力座標を表示
                 printf("%c%c\n", POS2COL(move), POS2ROW(move));
             }
@@ -138,6 +140,8 @@ int main(int argc, char *argv[]) {
     judge(board);
 
     Board_delete(board);
+
+    Com_delete(com);
 
     return 0;
 }
