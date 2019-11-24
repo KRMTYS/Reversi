@@ -180,6 +180,21 @@ int Board_put_and_flip(Board *board, Disk disk, Pos pos);
 void Board_undo(Board *board);
 
 ///
+/// @fn     Board_copy
+/// @brief  盤面をコピーする
+/// @param[in]  src コピー元盤面
+/// @param[out] dst コピー先盤面
+///
+void Board_copy(Board *src, Board *dst);
+
+///
+/// @fn     Board_reverse
+/// @brief  石色を逆転する
+/// @param[in]  board   盤面
+///
+void Board_reverse(Board *board);
+
+///
 /// @fn     Board_print
 /// @brief  盤面を描画する
 /// @param[in]  board    盤面

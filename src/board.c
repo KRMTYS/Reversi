@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "stack.h"
-
 // スタック長、適当
 #define STACK_SIZE 60 * 20
 
@@ -19,10 +17,23 @@
 /// @brief  リバーシ盤面
 ///
 struct Board_ {
-    Disk disks[BOARD_LENGTH]; ///< マス
-    Stack *stack;             ///< 手と返した石を記録するスタック
-                              ///< （返した石の位置1）、（返した石の数2）、... 、（置いた石の位置）
+    Disk disks[BOARD_LENGTH];   ///< マス情報
+    int  stack[STACK_SIZE];     ///< 返した石を記録するスタック
+                                ///< （返した石の位置1）（~N）... 、（着手位置）、（相手の石色）、（返した石数）
+    int  *sp;                   ///< スタックポインタ
 };
+
+///
+/// @def    STACK_PUSH
+/// @brief  スタックへのプッシュ
+///
+#define STACK_PUSH(board, value) (*((board)->sp++) = (value))
+
+///
+/// @def    STACK_POP
+/// @brief  スタックからのポップ
+///
+#define STACK_POP(board) (*(--(board)->sp))
 
 ///
 /// @enum   Dir
@@ -42,14 +53,10 @@ typedef enum {
 Board *Board_create(void) {
     Board *board = malloc(sizeof(Board));
 
-    board->stack = Stack_create(STACK_SIZE);
-
     return board;
 }
 
 void Board_delete(Board *board) {
-    Stack_delete(board->stack);
-
     free(board);
     board = NULL;
 }
@@ -69,7 +76,7 @@ void Board_init(Board *board) {
     board->disks[E4] = BLACK;
     board->disks[E5] = WHITE;
 
-    Stack_init(board->stack);
+    board->sp = board->stack;
 }
 
 Disk Board_disk(Board *board, Pos pos) {
@@ -190,25 +197,19 @@ int Board_count_flip_disks(Board *board, Disk disk, Pos pos) {
 ///
 static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
     int count = 0;
+    Disk op   = OPPONENT(disk);
     int n;
 
-    // 同色石まで探索
-    for (n = pos + dir; board->disks[n] != disk ; n += dir) {
-        // 空き/壁があるとき返せない
-        if ((board->disks[n] == EMPTY) || (board->disks[n] == WALL)) {
-            return 0;
+    // 相手の石を探索
+    for (n = pos + dir; board->disks[n] == op; n += dir);
+
+    // 終端が自分の石色であれば着手位置までたどりながら石を返す
+    if (board->disks[pos] == disk) {
+        for (n -= dir; board->disks[n] == op; n -= dir) {
+            board->disks[n] = disk;
+            STACK_PUSH(board, n);
+            count++;
         }
-
-        count++;
-    }
-
-    n -= dir;
-
-    // 石を返す
-    while (n != (int)pos) {
-        board->disks[n] = disk;
-        Stack_push(board->stack, n);
-        n -= dir;
     }
 
     return count;
@@ -226,25 +227,51 @@ int Board_put_and_flip(Board *board, Disk disk, Pos pos) {
     count += flip_line(board, disk, pos, LOWER_RIGHT);
     count += flip_line(board, disk, pos, LOWER_LEFT);
 
-    board->disks[pos] = disk;
-
-    Stack_push(board->stack, count);
-    Stack_push(board->stack, pos);
+    if (count > 0) {
+        board->disks[pos] = disk;
+        STACK_PUSH(board, pos);
+        STACK_PUSH(board, OPPONENT(disk));
+        STACK_PUSH(board, count);
+    }
 
     return count;
 }
 
 void Board_undo(Board *board) {
-    int move;
-    Stack_pop(board->stack, &move);
-    board->disks[move] = EMPTY;
+    if (board->sp <= board->stack) {
+        return;
+    }
 
-    int n;
-    Stack_pop(board->stack, &n);
+    int count  = STACK_POP(board);
+    Disk color = STACK_POP(board);
 
-    for (int i = 0; i < n; i++) {
-        Stack_pop(board->stack, &move);
-        board->disks[move] = OPPONENT(board->disks[move]);
+    board->disks[STACK_POP(board)] = EMPTY;
+
+    for (int i = 0; i < count; i++) {
+        board->disks[STACK_POP(board)] = color;
+    }
+}
+
+void Board_copy(Board *src, Board *dst) {
+    *dst = *src;
+    dst->sp = dst->sp + (src->sp - src->stack);
+}
+
+void Board_reverse(Board *board) {
+    for (int i = 0; i < BOARD_LENGTH; i++) {
+        switch (board->disks[i]) {
+            case BLACK: board->disks[i] = WHITE; break;
+            case WHITE: board->disks[i] = BLACK; break;
+            default: break;
+        }
+    }
+
+    for (int *p = board->sp; p > board->stack; ) {
+        p--;
+        int count = *p;     // 返した石数
+        p--;
+        *p = OPPONENT(*p);  // 色を反転
+        p -= (count + 1);   // （石数+着手）分さかのぼる
     }
 }
 
