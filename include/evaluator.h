@@ -59,7 +59,7 @@ void Evaluator_save(Evaluator *eval, const char *file);
 /// @param[in]  board   盤面
 /// @return 局面の評価値
 ///
-int Evaluator_evaluate(Evaluator *eval, const Board *board);
+int Evaluator_evaluate(Evaluator *eval, Board *board);
 
 ///
 /// @fn     Evaluator_update
@@ -68,6 +68,6 @@ int Evaluator_evaluate(Evaluator *eval, const Board *board);
 /// @param[in]  board   盤面
 /// @param[in]  value   局面の評価値
 ///
-void Evaluator_update(Evaluator *eval, const Board *board, int value);
+void Evaluator_update(Evaluator *eval, Board *board, int value);
 
 #endif // EVALUATOR_H_

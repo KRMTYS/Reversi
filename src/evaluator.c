@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 
 ///
@@ -108,12 +109,12 @@ typedef enum {
     POW3_6  = 729,
     POW3_7  = 2187,
     POW3_8  = 6561,
-    POW3_8  = 19683,
+    POW3_9  = 19683,
     POW3_10 = 59049
 } Pow3;
 
 // 各評価パターンの状態数
-static const pattern_size[] = {
+static const int pattern_size[] = {
     POW3_8, // hor./vert.2: A4-H4
     POW3_8, // hor./vert.3: A3-H3
     POW3_8, // hor./vert.4: A2-H2
@@ -234,7 +235,7 @@ void Evaluator_save(Evaluator *eval, const char *file) {
     fclose(fp);
 }
 
-int Evaluator_evaluate(Evaluator *eval, const Board *board) {
+int Evaluator_evaluate(Evaluator *eval, Board *board) {
     int result = 0;
 
     result += eval->values[PATTERN_HV4][PATTERN_IDX_8(board, A4, B4, C4, D4, E4, F4, G4, H4)];
@@ -317,7 +318,7 @@ static void Evaluator_update_pattern(Evaluator *eval, int pattern, int idx, int 
     }
 }
 
-void Evaluator_update(Evaluator *eval, const Board *board, int value) {
+void Evaluator_update(Evaluator *eval, Board *board, int value) {
     int diff = (int)((value - Evaluator_evaluate(eval, board)) * UPDATE_RATIO);
 
     int index = PATTERN_IDX_8(board, A4, B4, C4, D4, E4, F4, G4, H4);

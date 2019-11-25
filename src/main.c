@@ -103,12 +103,15 @@ int main(int argc, char *argv[]) {
     }
 
     Board *board = Board_create();
-
     Board_init(board);
 
     Com *com = Com_create();
+    Com_init(com);
+    Com_set_level(com, 6, 10, 6);
 
     Disk current = BLACK;
+
+    int val;
 
     while (true) {
         Board_print(board, current);
@@ -121,7 +124,7 @@ int main(int argc, char *argv[]) {
             if (current == player) {
                 move = get_input(board, current);
             } else {
-                move = Com_get_move(com, board, current);
+                move = Com_get_move(com, board, current, &val);
                 // プレイヤーと同様に入力座標を表示
                 printf("%c%c\n", POS2COL(move), POS2ROW(move));
             }
