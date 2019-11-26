@@ -44,6 +44,7 @@ typedef enum {
 /// @brief  盤面上の座標インデックス（列アルファベット・行番号）
 ///
 typedef enum {
+    NONE = 0,   // 座標なし
     A1 = 10, B1, C1, D1, E1, F1, G1, H1,
     A2 = 19, B2, C2, D2, E2, F2, G2, H2,
     A3 = 28, B3, C3, D3, E3, F3, G3, H3,
@@ -58,7 +59,7 @@ typedef enum {
 /// @fn     XY2POS
 /// @brief  座標値からインデックスを取得する
 ///
-#define XY2POS(x, y) ((x) * (BOARD_SIZE + 1) + (y))
+#define XY2POS(x, y) (((y) + 1) * (BOARD_SIZE + 1) + ((x) + 1))
 
 ///
 /// @fn     CHAR2POS
@@ -76,7 +77,7 @@ typedef enum {
 /// @fn     POS2ROW
 /// @brief  座標インデックスから行数を取得する
 ///
-#define POS2ROW(pos) ('0' + ((pos) / (BOARD_SIZE + 1)))
+#define POS2ROW(pos) ('0' + ((pos) / (BOARD_SIZE + 1) - 1))
 
 ///
 /// @typedef    Board
@@ -145,7 +146,7 @@ int Board_count_valid_moves(Board *board, Disk disk);
 
 ///
 /// @fn     Board_count_disk
-/// @brief  石数を数える
+/// @brief  指定した色の石数を数える
 /// @param[in]  board   [in]    盤面
 /// @param[in]  disk    [in]    石
 /// @return 指定した石の数
