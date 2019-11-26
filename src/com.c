@@ -59,7 +59,7 @@ void Com_init(Com *com) {
     com->mid_depth   = 1;
     com->wld_depth   = 1;
     com->exact_depth = 1;
-    com->node        = 1;
+    com->node        = 0;
 }
 
 void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld) {
@@ -91,11 +91,11 @@ static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alp
     Pos move;
     bool had_valid_move = false;
 
-    *next_move = 0;
+    *next_move = NONE;
 
     for (int i = 0; i < BOARD_LENGTH; i++) {
-        if (Board_check_valid(com->board, opponent, i)) {
-            Board_put_and_flip(com->board, opponent, i);
+        if (Board_check_valid(com->board, turn, i)) {
+            Board_put_and_flip(com->board, turn, i);
             if (!had_valid_move) {
                 *next_move = (Pos)i;
                 had_valid_move = true;
@@ -121,13 +121,13 @@ static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alp
     // 有効手がないとき
     if (!had_valid_move) {
         if (!Board_has_valid_move(com->board, opponent)) {
-            *next_move = 0;
-            com->node++;
             // ゲーム終了: 評価値を返す
+            *next_move = NONE;
+            com->node++;
             alpha = Board_count_disk(com->board, turn) - Board_count_disk(com->board, opponent);
         } else {
-            *next_move = 0;
             // パス: 手番を変更して探索を続ける
+            *next_move = NONE;
             alpha = -negaalpha(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
         }
     }
@@ -135,12 +135,12 @@ static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alp
     return alpha;
 }
 
-static int Com_end_search(Com *com, int depth, Disk turn, Disk opponent, Pos* move) {
-    return negaalpha(com, turn, opponent, move, -INT_MAX, INT_MAX, depth);
+static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* move, int alpha, int beta, int depth) {
+    return negaalpha(com, turn, opponent, move, alpha, beta, depth);
 }
 
-static int Com_mid_search(Com *com, int depth, Disk turn, Disk opponent, Pos* move) {
-    return negaalpha(com, turn, opponent, move, -INT_MAX, INT_MAX, depth);
+static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos* move, int alpha, int beta, int depth) {
+    return negaalpha(com, turn, opponent, move, alpha, beta, depth);
 }
 
 Pos Com_get_move(Com *com, Board *board, Disk turn, int *value) {
@@ -154,9 +154,9 @@ Pos Com_get_move(Com *com, Board *board, Disk turn, int *value) {
     int left = Board_count_disk(com->board, EMPTY);
 
     if (left <= com->exact_depth) {
-        val = Com_end_search(com, left, turn, OPPONENT(turn), &next_move);
+        val = Com_end_search(com, turn, OPPONENT(turn), &next_move, -(BOARD_SIZE * BOARD_SIZE), (BOARD_SIZE * BOARD_SIZE), left);
     } else if (left <= com->wld_depth) {
-        val = Com_end_search(com, left, turn, OPPONENT(turn), &next_move);
+        val = Com_end_search(com, turn, OPPONENT(turn), &next_move, -(BOARD_SIZE * BOARD_SIZE), 1, left);
     } else {
         if (((turn == WHITE) && (com->mid_depth % 2 == 0)) ||
             ((turn == BLACK) && (com->mid_depth % 2 == 1))) {
@@ -166,7 +166,7 @@ Pos Com_get_move(Com *com, Board *board, Disk turn, int *value) {
                 color = turn;
             }
 
-            val = Com_mid_search(com, com->mid_depth, color, OPPONENT(color), &next_move);
+            val = Com_mid_search(com, color, OPPONENT(color), &next_move, -(BOARD_SIZE * BOARD_SIZE), (BOARD_SIZE * BOARD_SIZE), left);
     }
 
     if (value) {
