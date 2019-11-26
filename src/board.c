@@ -9,8 +9,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// スタック長、適当
-#define STACK_SIZE 60 * 20
+// スタック長
+// 返せる最大の石数：(BOARD_SIZE - 2) * 3
+// 着手位置、相手の石色、返した石数の情報：3
+#define STACK_SIZE (((BOARD_SIZE - 2) * 3 + 3) * BOARD_SIZE * BOARD_SIZE - 4)
 
 ///
 /// @struct Board_
@@ -63,10 +65,12 @@ void Board_delete(Board *board) {
 
 void Board_init(Board *board) {
     for (int i = 0; i < BOARD_LENGTH; i++) {
-        if ((i < A1) || (i > H8) || (i % 9 == 0) ) {
-            board->disks[i] = WALL;
-        } else {
-            board->disks[i] = EMPTY;
+        board->disks[i] = WALL;
+    }
+
+    for (int y = 0; y < BOARD_SIZE; y++) {
+        for (int x = 0; x < BOARD_SIZE; x++) {
+            board->disks[XY2POS(x, y)] = EMPTY;
         }
     }
 
@@ -94,24 +98,8 @@ static bool is_on_board(Pos pos) {
     return ((pos >= A1) && (pos <= H8) && (pos % 9 != 0)) ? true : false;
 }
 
-///
-/// @fn     is_empty
-/// @brief  空きマスかを判定する
-/// @param[in]  board   座標
-/// @param[in]  pos     座標
-/// @retval true    指定した座標は空マスである
-/// @retval false   指定した座標は空マスではない
-///
-static bool is_empty(Board *board, Pos pos) {
-    return (board->disks[pos] == EMPTY) ? true : false;
-}
-
 bool Board_check_valid(Board *board, Disk disk, Pos pos) {
-    if (!is_on_board(pos) || !is_empty(board, pos)) {
-        return false;
-    }
-
-    if (Board_count_flip_disks(board, disk, pos) > 0) {
+    if (is_on_board(pos) && (board->disks[pos] == EMPTY) && Board_count_flip_disks(board, disk, pos) > 0) {
         return true;
     }
 
@@ -144,16 +132,17 @@ int Board_count_valid_moves(Board *board, Disk disk) {
 /// @return 返せる石数
 ///
 static int count_flip_disks_line(Board *board, Disk disk, Pos pos, Dir dir) {
+    int i;
     int count = 0;
+    Disk op = OPPONENT(disk);
 
-    // 同色石まで探索
-    for (int i = pos + dir; board->disks[i] != disk ; i += dir) {
-        // 空き/壁があるとき返せない
-        if ((board->disks[i] == EMPTY) || (board->disks[i] == WALL)) {
-            return 0;
-        }
-
+    // 相手の石を探索
+    for (i = pos + dir; board->disks[i] == op; i += dir) {
         count++;
+    }
+    // 終端が自色石でないときカウントしない
+    if (board->disks[i] != disk) {
+        return 0;
     }
 
     return count;
@@ -196,15 +185,15 @@ int Board_count_flip_disks(Board *board, Disk disk, Pos pos) {
 /// @return 返した石数
 ///
 static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
-    int count = 0;
-    Disk op   = OPPONENT(disk);
     int n;
+    int count = 0;
+    Disk op = OPPONENT(disk);
 
     // 相手の石を探索
     for (n = pos + dir; board->disks[n] == op; n += dir);
 
     // 終端が自分の石色であれば着手位置までたどりながら石を返す
-    if (board->disks[pos] == disk) {
+    if (board->disks[n] == disk) {
         for (n -= dir; board->disks[n] == op; n -= dir) {
             board->disks[n] = disk;
             STACK_PUSH(board, n);
@@ -279,9 +268,9 @@ void Board_print(Board *board, Disk current) {
     printf("    A B C D E F G H \n");
     printf("  +-----------------+\n");
 
-    for (int y = 1; y <= BOARD_SIZE; y++) {
+    for (int y = 0; y < BOARD_SIZE; y++) {
         printf("%d | ", y);
-        for (int x = 1; x <= BOARD_SIZE; x++) {
+        for (int x = 0; x < BOARD_SIZE; x++) {
             Pos pos = XY2POS(x, y);
             switch (board->disks[pos]) {
                 case WHITE: printf("O "); break;
@@ -289,8 +278,7 @@ void Board_print(Board *board, Disk current) {
                 default:
                     if (Board_check_valid(board, current, pos)) {
                         printf("* ");
-                    }
-                    else {
+                    } else {
                         printf("- ");
                     }
                     break;
