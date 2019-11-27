@@ -18,18 +18,6 @@
 #define UPDATE_RATIO 0.003
 
 ///
-/// @def    DISK_VALUE
-/// @brief  一石の評価値
-///
-#define DISK_VALUE 1000
-
-///
-/// @def    MAX_PATTERN_VALUE
-/// @brief  評価値の上限値
-///
-#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
-
-///
 /// @def    PATTERN_IDX(N)
 /// @brief  座標N個を使用するパターンのインデックス
 ///         各座標は3状態（黒石/白石/空）であるため各パターンはN^3の状態数を持つ

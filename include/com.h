@@ -8,15 +8,17 @@
 #define COM_H_
 
 #include "board.h"
+#include "evaluator.h"
 
 typedef struct Com_ Com;
 
 ///
 /// @fn     Com_create
 /// @brief  COMを生成する
+/// @param[in]  evaluator   評価器
 /// @return COM
 ///
-Com *Com_create(void);
+Com *Com_create(Evaluator* evaluator);
 
 ///
 /// @fn     Com_delete

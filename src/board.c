@@ -87,19 +87,8 @@ Disk Board_disk(Board *board, Pos pos) {
     return board->disks[pos];
 }
 
-///
-/// @fn     is_on_board
-/// @brief  座標を判定する
-/// @param[in]  pos 座標
-/// @retval true    指定した座標は盤上である
-/// @retval false   指定した座標は盤上ではない
-///
-static bool is_on_board(Pos pos) {
-    return ((pos >= A1) && (pos <= H8) && (pos % 9 != 0)) ? true : false;
-}
-
 bool Board_check_valid(Board *board, Disk disk, Pos pos) {
-    if (is_on_board(pos) && (board->disks[pos] == EMPTY) && Board_count_flip_disks(board, disk, pos) > 0) {
+    if ((board->disks[pos] == EMPTY) && Board_count_flip_disks(board, disk, pos) > 0) {
         return true;
     }
 

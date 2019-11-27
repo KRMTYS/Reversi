@@ -9,8 +9,6 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "evaluator.h"
-
 ///
 /// @struct Com_
 /// @brief  COM思考ルーチン
@@ -24,7 +22,7 @@ struct Com_ {
     int         node;           ///< 探索したノード数
 };
 
-Com *Com_create(void) {
+Com *Com_create(Evaluator *evaluator) {
     Com *com = malloc(sizeof(Com));
     if (com == NULL) return NULL;
 
@@ -34,7 +32,7 @@ Com *Com_create(void) {
         return NULL;
     }
 
-    com->evaluator = Evaluator_create();
+    com->evaluator = evaluator;
     if (com->evaluator == NULL) {
         Com_delete(com);
         return NULL;
@@ -84,8 +82,8 @@ static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alp
     // 再帰探索の末端
     if (depth == 0) {
         com->node++;
-        // 評価値として石差を返す
-        return Board_count_disk(com->board, turn) - Board_count_disk(com->board, opponent);
+        // 評価値を返す
+        return Evaluator_evaluate(com->evaluator, com->board);
     }
 
     Pos move;
@@ -118,15 +116,14 @@ static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alp
         }
     }
 
-    // 有効手がないとき
     if (!had_valid_move) {
         if (!Board_has_valid_move(com->board, opponent)) {
-            // ゲーム終了: 評価値を返す
+            // 互いに有効手ないときゲーム終了、石数差の評価値を返す
             *next_move = NONE;
             com->node++;
-            alpha = Board_count_disk(com->board, turn) - Board_count_disk(com->board, opponent);
+            alpha = DISK_VALUE * (Board_count_disk(com->board, turn) - Board_count_disk(com->board, opponent));
         } else {
-            // パス: 手番を変更して探索を続ける
+            // 相手に有効手あるときパス、手番を変更して探索を続ける
             *next_move = NONE;
             alpha = -negaalpha(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
         }
@@ -155,8 +152,10 @@ Pos Com_get_move(Com *com, Board *board, Disk turn, int *value) {
 
     if (left <= com->exact_depth) {
         val = Com_end_search(com, turn, OPPONENT(turn), &next_move, -(BOARD_SIZE * BOARD_SIZE), (BOARD_SIZE * BOARD_SIZE), left);
+        val *= DISK_VALUE;
     } else if (left <= com->wld_depth) {
         val = Com_end_search(com, turn, OPPONENT(turn), &next_move, -(BOARD_SIZE * BOARD_SIZE), 1, left);
+        val *= DISK_VALUE;
     } else {
         if (((turn == WHITE) && (com->mid_depth % 2 == 0)) ||
             ((turn == BLACK) && (com->mid_depth % 2 == 1))) {
@@ -166,7 +165,8 @@ Pos Com_get_move(Com *com, Board *board, Disk turn, int *value) {
                 color = turn;
             }
 
-            val = Com_mid_search(com, color, OPPONENT(color), &next_move, -(BOARD_SIZE * BOARD_SIZE), (BOARD_SIZE * BOARD_SIZE), left);
+            // 評価値の上限/下限を十分大きな正負値とする
+            val = Com_mid_search(com, color, OPPONENT(color), &next_move, -MAX_PATTERN_VALUE, MAX_PATTERN_VALUE, left);
     }
 
     if (value) {

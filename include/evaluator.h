@@ -10,6 +10,18 @@
 #include "board.h"
 
 ///
+/// @def    DISK_VALUE
+/// @brief  一石の評価値
+///
+#define DISK_VALUE 1000
+
+///
+/// @def    MAX_PATTERN_VALUE
+/// @brief  評価値の上限値
+///
+#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
+
+///
 /// @typedef    Evaluator
 /// @brief      評価器
 ///
