@@ -197,14 +197,18 @@ static void play(Board *board, Com *com, Disk player) {
 int main(int argc, char *argv[]) {
     Disk player   = BLACK;
     bool do_learn = false;
+    int  max_iter;
 
     int opt;
-    while ((opt = getopt(argc, argv, "bwclh")) != -1) {
+    while ((opt = getopt(argc, argv, "bwcl:h")) != -1) {
         switch (opt) {
             case 'b': player = BLACK; break;
             case 'w': player = WHITE; break;
             case 'c': player = EMPTY; break;
-            case 'l': do_learn = true; break;
+            case 'l':
+                do_learn = true;
+                max_iter = atoi(optarg);
+                break;
             case 'h':
                 printf(option_str);
                 return 0;
@@ -227,7 +231,7 @@ int main(int argc, char *argv[]) {
     Com_init(com);
 
     if (do_learn) {
-        learn(board, evaluator, com, 100);
+        learn(board, evaluator, com, max_iter);
     } else {
         Com_set_level(com, 6, 10, 6);
         play(board, com, player);
