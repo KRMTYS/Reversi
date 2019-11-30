@@ -45,7 +45,7 @@ void Com_init(Com *com);
 void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld);
 
 ///
-/// @fn     Com_get_move
+/// @fn     Com_get_nextmove
 /// @brief  次手を取得する
 /// @param[in]  com     COM
 /// @param[in]  board   盤面
@@ -53,7 +53,7 @@ void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld);
 /// @param[out] value   評価値
 /// @return COMの次手
 ///
-Pos Com_get_move(Com *com, Board *board, Disk turn, int *value);
+Pos Com_get_nextmove(Com *com, Board *board, Disk turn, int *value);
 
 ///
 /// @fn     Com_count_nodes

@@ -94,7 +94,7 @@ static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alp
     for (int y = 0; y < BOARD_SIZE; y++) {
         for (int x = 0; x < BOARD_LENGTH; x++) {
             if (Board_check_valid(com->board, turn, XY2POS(x, y))) {
-                Board_put_and_flip(com->board, turn, XY2POS(x, y));
+                Board_flip(com->board, turn, XY2POS(x, y));
                 if (!had_valid_move) {
                     *next_move = XY2POS(x, y);
                     had_valid_move = true;
@@ -103,7 +103,7 @@ static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alp
                 // 再帰探索
                 int score = -negaalpha(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
 
-                Board_undo(com->board);
+                Board_unflip(com->board);
 
                 // alphaカット: 下限値での枝刈り
                 if (score > alpha) {
@@ -142,7 +142,7 @@ static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos* move, int alp
     return negaalpha(com, turn, opponent, move, alpha, beta, depth);
 }
 
-Pos Com_get_move(Com *com, Board *board, Disk turn, int *value) {
+Pos Com_get_nextmove(Com *com, Board *board, Disk turn, int *value) {
     Pos next_move;
     int color;
     int val;

@@ -193,7 +193,7 @@ static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
     return count;
 }
 
-int Board_put_and_flip(Board *board, Disk disk, Pos pos) {
+int Board_flip(Board *board, Disk disk, Pos pos) {
     int count = 0;
     
     count += flip_line(board, disk, pos, UPPER);
@@ -215,7 +215,7 @@ int Board_put_and_flip(Board *board, Disk disk, Pos pos) {
     return count;
 }
 
-void Board_undo(Board *board) {
+void Board_unflip(Board *board) {
     if (board->sp <= board->stack) {
         return;
     }

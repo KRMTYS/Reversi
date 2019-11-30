@@ -164,21 +164,21 @@ int Board_count_disk(Board *board, Disk disk);
 int Board_count_flip_disks(Board *board, Disk disk, Pos pos);
 
 ///
-/// @fn     Board_put_and_flip
+/// @fn     Board_flip
 /// @brief  石を着手する
 /// @param[in,out]  board   盤面
 /// @param[in]      disk    手番
 /// @param[in]      pos     座標
 /// @return 返した石数
 ///
-int Board_put_and_flip(Board *board, Disk disk, Pos pos);
+int Board_flip(Board *board, Disk disk, Pos pos);
 
 ///
-/// @fn     Board_undo
+/// @fn     Board_unflip
 /// @brief  局面を巻き戻す
 /// @param[in,out]  board    盤面
 ///
-void Board_undo(Board *board);
+void Board_unflip(Board *board);
 
 ///
 /// @fn     Board_copy
