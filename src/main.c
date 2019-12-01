@@ -91,7 +91,7 @@ static int get_rand(int max) {
 }
 
 static void move_random(Board *board, Disk color) {
-    while(!Board_put_and_flip(board, color, XY2POS(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
+    while(!Board_flip(board, color, XY2POS(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
 }
 
 void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
@@ -121,8 +121,8 @@ void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
                 if ((Board_count_disk(board, EMPTY) > 12) && (get_rand(100) < 1)) {
                     move_random(board, color);
                 } else {
-                    move = Com_get_move(com, board, color, &value);
-                    Board_put_and_flip(board, color, move);
+                    move = Com_get_nextmove(com, board, color, &value);
+                    Board_flip(board, color, move);
                 }
 
                 history[turn] = color;
@@ -136,11 +136,11 @@ void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
         int result = (Board_count_disk(board, BLACK) - Board_count_disk(board, WHITE)) * DISK_VALUE;
         for (int j = Board_count_disk(board, EMPTY); j < 8; j++) {
             turn--;
-            Board_undo(board);
+            Board_unflip(board);
         }
         for (int j = Board_count_disk(board, EMPTY); j < (BOARD_SIZE * BOARD_SIZE - 12); j++) {
             turn--;
-            Board_undo(board);
+            Board_unflip(board);
             if (history[turn] == BLACK) {
                 Evaluator_update(evaluator, board, result);
             } else {
@@ -176,12 +176,12 @@ static void play(Board *board, Com *com, Disk player) {
             if (current == player) {
                 move = get_input(board, current);
             } else {
-                move = Com_get_move(com, board, current, &val);
+                move = Com_get_nextmove(com, board, current, &val);
                 // プレイヤーと同様に入力座標を表示
                 printf("%c%c\n", POS2COL(move), POS2ROW(move));
             }
 
-            Board_put_and_flip(board, current, move);
+            Board_flip(board, current, move);
 
         } else if (Board_has_valid_move(board, OPPONENT(current))) {
             printf("pass\n");
