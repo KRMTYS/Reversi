@@ -14,9 +14,10 @@
 #include "evaluator.h"
 
 const char option_str[] = "options:\n \
-    -b) play with BLACK (first turn, by default)\n \
-    -w) play with WHITE (second turn)\n \
+    -b) play with BLACK (by default)\n \
+    -w) play with WHITE \n \
     -c) COM vs COM\n \
+    -l iterations) learning (specify iteration) \n \
     -h) show this help\n";
 
 #define EVAL_FILE "eval.dat"
@@ -90,15 +91,15 @@ static int get_rand(int max) {
 }
 
 static void move_random(Board *board, Disk color) {
-    while(!Board_flip(board, color, XY2POS(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
+    while(!Board_put_and_flip(board, color, XY2POS(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
 }
 
-void learn(Board *board, Evaluator *evaluator, Com *com, int max_iter) {
+void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
     int  history[BOARD_SIZE * BOARD_SIZE];
 
     Com_set_level(com, 4, 12, 12);
 
-    for (int i = 0; i < max_iter; i++) {
+    for (int i = 0; i < iteration; i++) {
         Disk color = BLACK;
         Pos move;
         int turn = 0;
@@ -120,8 +121,8 @@ void learn(Board *board, Evaluator *evaluator, Com *com, int max_iter) {
                 if ((Board_count_disk(board, EMPTY) > 12) && (get_rand(100) < 1)) {
                     move_random(board, color);
                 } else {
-                    move = Com_get_nextmove(com, board, color, &value);
-                    Board_flip(board, color, move);
+                    move = Com_get_move(com, board, color, &value);
+                    Board_put_and_flip(board, color, move);
                 }
 
                 history[turn] = color;
@@ -135,11 +136,11 @@ void learn(Board *board, Evaluator *evaluator, Com *com, int max_iter) {
         int result = (Board_count_disk(board, BLACK) - Board_count_disk(board, WHITE)) * DISK_VALUE;
         for (int j = Board_count_disk(board, EMPTY); j < 8; j++) {
             turn--;
-            Board_unflip(board);
+            Board_undo(board);
         }
         for (int j = Board_count_disk(board, EMPTY); j < (BOARD_SIZE * BOARD_SIZE - 12); j++) {
             turn--;
-            Board_unflip(board);
+            Board_undo(board);
             if (history[turn] == BLACK) {
                 Evaluator_update(evaluator, board, result);
             } else {
@@ -150,7 +151,7 @@ void learn(Board *board, Evaluator *evaluator, Com *com, int max_iter) {
         }
 
         if ((i + 1) % 100 == 0) {
-            printf("Learning ... %d / %d\n", (i + 1), max_iter);
+            printf("Learning ... %d / %d\n", (i + 1), iteration);
             Evaluator_save(evaluator, EVAL_FILE);
         }
     }
@@ -175,12 +176,12 @@ static void play(Board *board, Com *com, Disk player) {
             if (current == player) {
                 move = get_input(board, current);
             } else {
-                move = Com_get_nextmove(com, board, current, &val);
+                move = Com_get_move(com, board, current, &val);
                 // プレイヤーと同様に入力座標を表示
                 printf("%c%c\n", POS2COL(move), POS2ROW(move));
             }
 
-            Board_flip(board, current, move);
+            Board_put_and_flip(board, current, move);
 
         } else if (Board_has_valid_move(board, OPPONENT(current))) {
             printf("pass\n");
@@ -197,7 +198,7 @@ static void play(Board *board, Com *com, Disk player) {
 int main(int argc, char *argv[]) {
     Disk player   = BLACK;
     bool do_learn = false;
-    int  max_iter;
+    int  iteration;
 
     int opt;
     while ((opt = getopt(argc, argv, "bwcl:h")) != -1) {
@@ -207,7 +208,7 @@ int main(int argc, char *argv[]) {
             case 'c': player = EMPTY; break;
             case 'l':
                 do_learn = true;
-                max_iter = atoi(optarg);
+                iteration = atoi(optarg);
                 break;
             case 'h':
                 printf(option_str);
@@ -231,7 +232,7 @@ int main(int argc, char *argv[]) {
     Com_init(com);
 
     if (do_learn) {
-        learn(board, evaluator, com, max_iter);
+        learn(board, evaluator, com, iteration);
     } else {
         Com_set_level(com, 6, 10, 6);
         play(board, com, player);
