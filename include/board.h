@@ -154,14 +154,14 @@ int Board_count_valid_moves(Board *board, Disk disk);
 int Board_count_disk(Board *board, Disk disk);
 
 ///
-/// @fn     Board_count_flip_disks
+/// @fn     Board_count_flips
 /// @brief  返せる石数を数える
 /// @param[in]  board   盤面
 /// @param[in]  disk    手番
 /// @param[in]  pos     座標
 /// @return 指定した座標に石を置いたとき返せる石数
 ///
-int Board_count_flip_disks(Board *board, Disk disk, Pos pos);
+int Board_count_flips(Board *board, Disk disk, Pos pos);
 
 ///
 /// @fn     Board_flip
@@ -175,10 +175,11 @@ int Board_flip(Board *board, Disk disk, Pos pos);
 
 ///
 /// @fn     Board_unflip
-/// @brief  局面を巻き戻す
+/// @brief  局面を一手戻す
 /// @param[in,out]  board    盤面
+/// @return 返した石数
 ///
-void Board_unflip(Board *board);
+int Board_unflip(Board *board);
 
 ///
 /// @fn     Board_copy
