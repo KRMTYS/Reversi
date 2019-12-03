@@ -65,7 +65,7 @@ typedef enum {
 /// @fn     CHAR2POS
 /// @brief  行・列文字からインデックスを取得する
 ///
-#define CHAR2POS(col, row) (XY2POS((toupper((col)) - 'A' + 1), ((row) - '0')))
+#define CHAR2POS(col, row) (XY2POS((toupper((col)) - 'A'), ((row) - '1')))
 
 ///
 /// @fn     POS2COL
