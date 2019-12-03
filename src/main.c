@@ -233,14 +233,11 @@ int main(int argc, char *argv[]) {
     }
 
     Board *board = Board_create();
-    Board_init(board);
 
     Evaluator *evaluator = Evaluator_create();
-    Evaluator_init(evaluator);
     Evaluator_load(evaluator, EVAL_FILE);
 
     Com *com = Com_create(evaluator);
-    Com_init(com);
 
     if (learning) {
         learn(board, evaluator, com, iteration);
@@ -250,8 +247,6 @@ int main(int argc, char *argv[]) {
     }
 
     Board_delete(board);
-
-    Evaluator_delete(evaluator);
 
     Com_delete(com);
 

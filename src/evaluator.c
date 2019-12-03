@@ -130,6 +130,8 @@ struct Evaluator_ {
 Evaluator *Evaluator_create(void) {
     Evaluator *eval = malloc(sizeof(Evaluator));
 
+    Evaluator_init(eval);
+
     return eval;
 }
 
@@ -208,7 +210,7 @@ void Evaluator_load(Evaluator *eval, const char *file) {
 }
 
 void Evaluator_save(Evaluator *eval, const char *file) {
-    FILE *fp = fopen(file, "rb");
+    FILE *fp = fopen(file, "wb");
     if (!fp) {
         return;
     }
