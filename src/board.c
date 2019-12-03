@@ -52,6 +52,9 @@ typedef enum {
     LOWER_LEFT  =   8   ///< 左下
 } Dir;
 
+static int flip_line(Board *board, Disk disk, Pos pos, Dir dir);
+static int count_flips_line(const Board *board, Disk disk, Pos pos, Dir dir);
+
 Board *Board_create(void) {
     Board *board = malloc(sizeof(Board));
     if (board) {
@@ -67,7 +70,7 @@ void Board_delete(Board *board) {
 }
 
 void Board_init(Board *board) {
-    for (int pos = 0; pos < BOARD_LENGTH; pos++) {
+    for (Pos pos = 0; pos < BOARD_LENGTH; pos++) {
         board->disks[pos] = WALL;
     }
 
@@ -86,38 +89,14 @@ void Board_init(Board *board) {
     board->sp = board->stack;
 }
 
-Disk Board_disk(Board *board, Pos pos) {
+Disk Board_disk(const Board *board, Pos pos) {
     return board->disks[pos];
 }
 
-bool Board_check_valid(Board *board, Disk disk, Pos pos) {
-    if ((board->disks[pos] == EMPTY) && Board_count_flips(board, disk, pos) > 0) {
-        return true;
-    }
-
-    return false;
-}
-
-bool Board_has_valid_move(Board *board, Disk disk) {
-    return (Board_count_valid_moves(board, disk) > 0) ? true : false;
-}
-
-int Board_count_valid_moves(Board *board, Disk disk) {
+int Board_count_disks(const Board *board, Disk disk) {
     int count = 0;
 
-    for (int pos = 0; pos < BOARD_LENGTH; pos++) {
-        if (Board_check_valid(board, disk, pos)) {
-            count++;
-        }
-    }
-
-    return count;
-}
-
-int Board_count_disk(Board *board, Disk disk) {
-    int count = 0;
-
-    for (int pos = 0; pos < BOARD_LENGTH; pos++) {
+    for (Pos pos = 0; pos < BOARD_LENGTH; pos++) {
         if (board->disks[pos] == disk) {
             count++;
         }
@@ -126,63 +105,13 @@ int Board_count_disk(Board *board, Disk disk) {
     return count;
 }
 
-///
-/// @fn     count_flip_line
-/// @brief  一方向に返せる石数を数える
-/// @param[in]  board   盤面
-/// @param[in]  disk    手番
-/// @param[in]  pos     座標
-/// @param[in]  dir     探索方向
-/// @return 返せる石数
-///
-static int count_flips_line(Board *board, Disk disk, Pos pos, Dir dir) {
-    int cur_pos;
-    int count = 0;
-    Disk op = OPPONENT(disk);
-
-    // 相手の石を探索
-    for (cur_pos = pos + dir; board->disks[cur_pos] == op; cur_pos += dir) {
-        count++;
-    }
-    // 終端が自色石でないときカウントしない
-    if (board->disks[cur_pos] != disk) {
-        return 0;
-    }
-
-    return count;
-}
-
-int Board_count_flips(Board *board, Disk disk, Pos pos) {
-    int count = 0;
-
-    count += count_flips_line(board, disk, pos, UPPER);
-    count += count_flips_line(board, disk, pos, UPPER_RIGHT);
-    count += count_flips_line(board, disk, pos, UPPER_LEFT);
-    count += count_flips_line(board, disk, pos, RIGHT);
-    count += count_flips_line(board, disk, pos, LEFT);
-    count += count_flips_line(board, disk, pos, LOWER);
-    count += count_flips_line(board, disk, pos, LOWER_RIGHT);
-    count += count_flips_line(board, disk, pos, LOWER_LEFT);
-
-    return count;
-}
-
-///
-/// @fn     flip_line
-/// @brief  一方向に石を反転する
-/// @param[in,out]  board   盤面
-/// @param[in]      disk    手番
-/// @param[in]      pos     座標
-/// @param[in]      dir     探索方向
-/// @return 返した石数
-///
 static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
     Pos cur_pos;
     int count = 0;
     Disk op = OPPONENT(disk);
 
     // 相手の石を探索
-    for (cur_pos = pos + dir; board->disks[cur_pos] == op; cur_pos += dir);
+    for (cur_pos = (pos + dir); board->disks[cur_pos] == op; cur_pos += dir);
 
     // 終端が自分の石色であれば着手位置までたどりながら石を返す
     if (board->disks[cur_pos] == disk) {
@@ -239,13 +168,74 @@ int Board_unflip(Board *board) {
     return count;
 }
 
-void Board_copy(Board *src, Board *dst) {
+static int count_flips_line(const Board *board, Disk disk, Pos pos, Dir dir) {
+    int cur_pos;
+    int count = 0;
+    Disk op = OPPONENT(disk);
+
+    // 相手の石を探索
+    for (cur_pos = pos + dir; board->disks[cur_pos] == op; cur_pos += dir) {
+        count++;
+    }
+    // 終端が自色石でないときカウントしない
+    if (board->disks[cur_pos] != disk) {
+        return 0;
+    }
+
+    return count;
+}
+
+int Board_count_flips(const Board *board, Disk disk, Pos pos) {
+    int count = 0;
+
+    count += count_flips_line(board, disk, pos, UPPER);
+    count += count_flips_line(board, disk, pos, UPPER_RIGHT);
+    count += count_flips_line(board, disk, pos, UPPER_LEFT);
+    count += count_flips_line(board, disk, pos, RIGHT);
+    count += count_flips_line(board, disk, pos, LEFT);
+    count += count_flips_line(board, disk, pos, LOWER);
+    count += count_flips_line(board, disk, pos, LOWER_RIGHT);
+    count += count_flips_line(board, disk, pos, LOWER_LEFT);
+
+    return count;
+}
+
+bool Board_can_flip(const Board *board, Disk disk, Pos pos) {
+    if (board->disks[pos] != EMPTY) {
+        return false;
+    }
+
+    if (count_flips_line(board, disk, pos, UPPER_LEFT) > 0)  return true;
+    if (count_flips_line(board, disk, pos, UPPER) > 0)       return true;
+    if (count_flips_line(board, disk, pos, UPPER_RIGHT) > 0) return true;
+    if (count_flips_line(board, disk, pos, LEFT) > 0)        return true;
+    if (count_flips_line(board, disk, pos, RIGHT) > 0)       return true;
+    if (count_flips_line(board, disk, pos, LOWER_LEFT) > 0)  return true;
+    if (count_flips_line(board, disk, pos, LOWER) > 0)       return true;
+    if (count_flips_line(board, disk, pos, LOWER_RIGHT) > 0) return true;
+
+    return false;
+}
+
+bool Board_can_play(const Board *board, Disk disk) {
+    for (int y = 0; y < BOARD_SIZE; y++) {
+        for (int x = 0; x < BOARD_SIZE; x++) {
+            if (Board_can_flip(board, disk, XY2POS(x, y))) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void Board_copy(const Board *src, Board *dst) {
     *dst = *src;
     dst->sp = dst->stack + (src->sp - src->stack);
 }
 
 void Board_reverse(Board *board) {
-    for (int pos = 0; pos < BOARD_LENGTH; pos++) {
+    for (Pos pos = 0; pos < BOARD_LENGTH; pos++) {
         switch (board->disks[pos]) {
             case BLACK: board->disks[pos] = WHITE; break;
             case WHITE: board->disks[pos] = BLACK; break;
@@ -262,19 +252,22 @@ void Board_reverse(Board *board) {
     }
 }
 
-void Board_print(Board *board, Disk current) {
+void Board_print(const Board *board, Disk turn) {
     printf("    A B C D E F G H \n");
     printf("  +-----------------+\n");
-
     for (int y = 0; y < BOARD_SIZE; y++) {
         printf("%d | ", y);
         for (int x = 0; x < BOARD_SIZE; x++) {
             Pos pos = XY2POS(x, y);
             switch (board->disks[pos]) {
-                case WHITE: printf("O "); break;
-                case BLACK: printf("@ "); break;
+                case WHITE:
+                    printf("O ");
+                    break;
+                case BLACK:
+                    printf("@ ");
+                    break;
                 default:
-                    if (Board_check_valid(board, current, pos)) {
+                    if (Board_can_flip(board, turn, pos)) {
                         printf("* ");
                     } else {
                         printf("- ");
@@ -284,6 +277,5 @@ void Board_print(Board *board, Disk current) {
         }
         printf("|\n");
     }
-
     printf("  +-----------------+\n");
 }

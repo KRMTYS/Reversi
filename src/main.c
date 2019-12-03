@@ -14,11 +14,16 @@
 #include "evaluator.h"
 
 const char option_str[] = "options:\n \
-    -b) play with BLACK (by default)\n \
-    -w) play with WHITE \n \
-    -c) COM vs COM\n \
-    -l iterations) learning (specify iteration) \n \
-    -h) show this help\n";
+    -b\n \
+        play with BLACK turn (by default)\n \
+    -w\n \
+        play with WHITE turn\n \
+    -c\n \
+        COM vs COM\n \
+    -l iterations\n\
+        learning with self-playing (specify iterations) \n \
+    -h\n \
+        show this help\n";
 
 #define EVAL_FILE "eval.dat"
 
@@ -27,8 +32,8 @@ const char option_str[] = "options:\n \
 /// @brief  プロンプトを表示する
 /// @param[in]  currnent   現在の手番
 ///
-static void show_prompt(Disk current) {
-    if (current == BLACK) {
+static void show_prompt(Disk turn) {
+    if (turn == BLACK) {
         printf("Black(@) >> ");
     } else {
         printf("White(O) >> ");
@@ -39,14 +44,13 @@ static void show_prompt(Disk current) {
 /// @fn     get_input
 /// @brief  プレイヤー入力を取得する
 /// @param[in]  board   盤面
-/// @param[in]  current 現在の手番
+/// @param[in]  turn 現在の手番
 /// @return 入力に対応した座標インデックス（'A1' - 'H8'）
 ///
-static Pos get_input(Board *board, Disk current) {
+static Pos get_input(Board *board, Disk turn) {
     Pos move;
 
     while (true) {
-        // col + row + '\0'
         char input[3];
         fgets(input, sizeof(input), stdin);
 
@@ -57,11 +61,12 @@ static Pos get_input(Board *board, Disk current) {
 
         move = CHAR2POS(input[0], input[1]);
 
-        // 石の設置判定
-        if (Board_check_valid(board, current, move)) {
+        // 着手判定
+        if (Board_can_flip(board, turn, move)) {
             break;
         } else {
-            show_prompt(current);
+            Board_print(board, turn);
+            show_prompt(turn);
         }
     }
 
@@ -74,8 +79,8 @@ static Pos get_input(Board *board, Disk current) {
 /// @param[in]  board   盤面
 ///
 static void judge(Board *board) {
-    int n_black = Board_count_disk(board, BLACK);
-    int n_white = Board_count_disk(board, WHITE);
+    int n_black = Board_count_disks(board, BLACK);
+    int n_white = Board_count_disks(board, WHITE);
 
     if (n_black > n_white) {
         printf("*** BLACK wins ***\n");
@@ -108,7 +113,7 @@ void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
         Board_init(board);
 
         for (int j = 0; j < 8; j++) {
-            if (Board_has_valid_move(board, color)) {
+            if (Board_can_play(board, color)) {
                 move_random(board, color);
                 history[turn] = color;
                 turn++;
@@ -117,8 +122,8 @@ void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
         }
 
         while (true) {
-            if (Board_has_valid_move(board, color)) {
-                if ((Board_count_disk(board, EMPTY) > 12) && (get_rand(100) < 1)) {
+            if (Board_can_play(board, color)) {
+                if ((Board_count_disks(board, EMPTY) > 12) && (get_rand(100) < 1)) {
                     move_random(board, color);
                 } else {
                     move = Com_get_nextmove(com, board, color, &value);
@@ -127,18 +132,18 @@ void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
 
                 history[turn] = color;
                 turn++;
-            } else if (!Board_has_valid_move(board, OPPONENT(color))){
+            } else if (!Board_can_play(board, OPPONENT(color))){
                 break;
             }
             color = OPPONENT(color);
         }
 
-        int result = (Board_count_disk(board, BLACK) - Board_count_disk(board, WHITE)) * DISK_VALUE;
-        for (int j = Board_count_disk(board, EMPTY); j < 8; j++) {
+        int result = (Board_count_disks(board, BLACK) - Board_count_disks(board, WHITE)) * DISK_VALUE;
+        for (int j = Board_count_disks(board, EMPTY); j < 8; j++) {
             turn--;
             Board_unflip(board);
         }
-        for (int j = Board_count_disk(board, EMPTY); j < (BOARD_SIZE * BOARD_SIZE - 12); j++) {
+        for (int j = Board_count_disks(board, EMPTY); j < (BOARD_SIZE * BOARD_SIZE - 12); j++) {
             turn--;
             Board_unflip(board);
             if (history[turn] == BLACK) {
@@ -161,35 +166,35 @@ void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
 }
 
 static void play(Board *board, Com *com, Disk player) {
-    Disk current = BLACK;
+    Disk turn = BLACK;
 
     int val;
 
     while (true) {
-        Board_print(board, current);
-        printf("@:%2d O:%2d\n", Board_count_disk(board, BLACK), Board_count_disk(board, WHITE));
+        Board_print(board, turn);
+        printf("@:%2d O:%2d\n", Board_count_disks(board, BLACK), Board_count_disks(board, WHITE));
 
-        if (Board_has_valid_move(board, current)) {
-            show_prompt(current);
+        if (Board_can_play(board, turn)) {
+            show_prompt(turn);
 
             Pos move;
-            if (current == player) {
-                move = get_input(board, current);
+            if (turn == player) {
+                move = get_input(board, turn);
             } else {
-                move = Com_get_nextmove(com, board, current, &val);
+                move = Com_get_nextmove(com, board, turn, &val);
                 // プレイヤーと同様に入力座標を表示
                 printf("%c%c\n", POS2COL(move), POS2ROW(move));
             }
 
-            Board_flip(board, current, move);
+            Board_flip(board, turn, move);
 
-        } else if (Board_has_valid_move(board, OPPONENT(current))) {
+        } else if (Board_can_play(board, OPPONENT(turn))) {
             printf("pass\n");
         } else {
             break;
         }
 
-        current = OPPONENT(current);
+        turn = OPPONENT(turn);
     }
 
     judge(board);
@@ -197,17 +202,23 @@ static void play(Board *board, Com *com, Disk player) {
 
 int main(int argc, char *argv[]) {
     Disk player   = BLACK;
-    bool do_learn = false;
+    bool learning = false;
     int  iteration;
 
     int opt;
     while ((opt = getopt(argc, argv, "bwcl:h")) != -1) {
         switch (opt) {
-            case 'b': player = BLACK; break;
-            case 'w': player = WHITE; break;
-            case 'c': player = EMPTY; break;
+            case 'b':
+                player = BLACK;
+                break;
+            case 'w':
+                player = WHITE;
+                break;
+            case 'c':
+                player = EMPTY;
+                break;
             case 'l':
-                do_learn = true;
+                learning  = true;
                 iteration = atoi(optarg);
                 break;
             case 'h':
@@ -216,7 +227,7 @@ int main(int argc, char *argv[]) {
                 break;
             default:
                 printf("invalid option : \'%c\'", opt);
-                return 1;
+                return -1;
                 break;
         }
     }
@@ -231,7 +242,7 @@ int main(int argc, char *argv[]) {
     Com *com = Com_create(evaluator);
     Com_init(com);
 
-    if (do_learn) {
+    if (learning) {
         learn(board, evaluator, com, iteration);
     } else {
         Com_set_level(com, 6, 10, 6);

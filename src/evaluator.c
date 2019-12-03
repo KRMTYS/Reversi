@@ -278,7 +278,7 @@ int Evaluator_evaluate(Evaluator *eval, Board *board) {
     result += eval->values[PATTERN_CORNER8][PATTERN_IDX_8(board, A8, B8, C8, A7, B7, C7, A6, B6)];
     result += eval->values[PATTERN_CORNER8][PATTERN_IDX_8(board, H8, G8, F8, H7, G7, F7, H6, G6)];
 
-    result += eval->values[PATTERN_PARITY][Board_count_disk(board, EMPTY) & 1];
+    result += eval->values[PATTERN_PARITY][Board_count_disks(board, EMPTY) & 1];
 
     return result;
 }
@@ -403,5 +403,5 @@ void Evaluator_update(Evaluator *eval, Board *board, int value) {
     index = PATTERN_IDX_8(board, H8, G8, F8, H7, G7, F7, H6, G6);
     Evaluator_update_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
 
-    Evaluator_update_pattern(eval, PATTERN_PARITY, (Board_count_disk(board, EMPTY) & 1), -1, diff);
+    Evaluator_update_pattern(eval, PATTERN_PARITY, (Board_count_disks(board, EMPTY) & 1), -1, diff);
 }

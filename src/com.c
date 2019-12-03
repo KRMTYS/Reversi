@@ -24,7 +24,9 @@ struct Com_ {
 
 Com *Com_create(Evaluator *evaluator) {
     Com *com = malloc(sizeof(Com));
-    if (com == NULL) return NULL;
+    if (com == NULL) {
+        return NULL;
+    }
 
     com->board = Board_create();
     if (com->board == NULL) {
@@ -37,6 +39,8 @@ Com *Com_create(Evaluator *evaluator) {
         Com_delete(com);
         return NULL;
     }
+
+    Com_init(com);
 
     return com;
 }
@@ -67,7 +71,7 @@ void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld) {
 }
 
 ///
-/// @fn     negaalpha
+/// @fn     Com_mid_search
 /// @brief  NegaAlpha法による再帰探索
 /// @param[in]  com         COM
 /// @param[in]  turn        現在の手番色
@@ -78,7 +82,7 @@ void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld) {
 /// @param[in]  depth       残りの探索深さ
 /// @return 盤面の評価値
 ///
-static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alpha, int beta, int depth) {
+static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos *next_move, int alpha, int beta, int depth) {
     // 再帰探索の末端
     if (depth == 0) {
         com->node++;
@@ -87,27 +91,25 @@ static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alp
     }
 
     Pos move;
-    bool had_valid_move = false;
+    bool has_move = false;
 
     *next_move = NONE;
 
     for (int y = 0; y < BOARD_SIZE; y++) {
-        for (int x = 0; x < BOARD_LENGTH; x++) {
-            if (Board_check_valid(com->board, turn, XY2POS(x, y))) {
-                Board_flip(com->board, turn, XY2POS(x, y));
-                if (!had_valid_move) {
+        for (int x = 0; x < BOARD_SIZE; x++) {
+            if (Board_flip(com->board, turn, XY2POS(x, y)) > 0) {
+                if (!has_move) {
                     *next_move = XY2POS(x, y);
-                    had_valid_move = true;
+                    has_move = true;
                 }
 
-                // 再帰探索
-                int score = -negaalpha(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
+                int value = -Com_mid_search(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
 
                 Board_unflip(com->board);
 
                 // alphaカット: 下限値での枝刈り
-                if (score > alpha) {
-                    alpha = score;
+                if (value > alpha) {
+                    alpha = value;
                     *next_move = XY2POS(x, y);
                     // betaカット: 上限値での枝刈り
                     if (alpha >= beta) {
@@ -118,28 +120,70 @@ static int negaalpha(Com *com, Disk turn, Disk opponent, Pos *next_move, int alp
         }
     }
 
-    if (!had_valid_move) {
-        if (!Board_has_valid_move(com->board, opponent)) {
+    if (!has_move) {
+        if (!Board_can_play(com->board, opponent)) {
             // 互いに有効手ないときゲーム終了、石数差の評価値を返す
             *next_move = NONE;
             com->node++;
-            alpha = DISK_VALUE * (Board_count_disk(com->board, turn) - Board_count_disk(com->board, opponent));
+            alpha = DISK_VALUE * (Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent));
         } else {
             // 相手に有効手あるときパス、手番を変更して探索を続ける
             *next_move = NONE;
-            alpha = -negaalpha(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
+            alpha = -Com_mid_search(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
         }
     }
 
     return alpha;
 }
 
-static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* move, int alpha, int beta, int depth) {
-    return negaalpha(com, turn, opponent, move, alpha, beta, depth);
-}
+static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* next_move, int alpha, int beta, int depth) {
+    if (depth == 0) {
+        com->node++;
+        return Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent);
+    }
 
-static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos* move, int alpha, int beta, int depth) {
-    return negaalpha(com, turn, opponent, move, alpha, beta, depth);
+    Pos move;
+    bool has_move = false;
+
+    *next_move = NONE;
+
+    for (int y = 0; y < BOARD_SIZE; y++) {
+        for (int x = 0; x < BOARD_SIZE; x++) {
+            if (Board_flip(com->board, turn, XY2POS(x, y)) > 0) {
+                if (!has_move) {
+                    *next_move = XY2POS(x, y);
+                    has_move = true;
+                }
+
+                int value = -Com_end_search(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
+
+                Board_unflip(com->board);
+
+                if (value > alpha) {
+                    alpha = value;
+                    *next_move = XY2POS(x, y);
+                    if (alpha >= beta) {
+                        return beta;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!has_move) {
+        if (!Board_can_play(com->board, opponent)) {
+            // 互いに有効手ないときゲーム終了、石数差の評価値を返す
+            *next_move = NONE;
+            com->node++;
+            alpha = (Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent));
+        } else {
+            // 相手に有効手あるときパス、手番を変更して探索を続ける
+            *next_move = NONE;
+            alpha = -Com_end_search(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
+        }
+    }
+
+    return alpha;
 }
 
 Pos Com_get_nextmove(Com *com, Board *board, Disk turn, int *value) {
@@ -150,7 +194,7 @@ Pos Com_get_nextmove(Com *com, Board *board, Disk turn, int *value) {
     Board_copy(board, com->board);
     com->node = 0;
 
-    int left = Board_count_disk(com->board, EMPTY);
+    int left = Board_count_disks(com->board, EMPTY);
 
     if (left <= com->exact_depth) {
         val = Com_end_search(com, turn, OPPONENT(turn), &next_move, -(BOARD_SIZE * BOARD_SIZE), (BOARD_SIZE * BOARD_SIZE), left);
@@ -178,6 +222,6 @@ Pos Com_get_nextmove(Com *com, Board *board, Disk turn, int *value) {
     return next_move;
 }
 
-int Com_count_nodes(Com *com) {
+int Com_count_nodes(const Com *com) {
     return com->node;
 }

@@ -61,6 +61,6 @@ Pos Com_get_nextmove(Com *com, Board *board, Disk turn, int *value);
 /// @param[in]  com     COM
 /// @return 探索したノード数
 ///
-int Com_count_nodes(Com *com);
+int Com_count_nodes(const Com *com);
 
 #endif // COM_H_
