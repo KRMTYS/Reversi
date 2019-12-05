@@ -152,7 +152,7 @@ void Evaluator_init(Evaluator *eval) {
         mirror_out = 0;
         coeff = POW3_7;
         for (int j = 0; j < 8; j++) {
-            mirror_out += mirror_in;
+            mirror_out += mirror_in % 3 * coeff;
             mirror_in /= 3;
             coeff /= 3;
         }
@@ -167,9 +167,8 @@ void Evaluator_init(Evaluator *eval) {
         mirror_out = 0;
         coeff = POW3_7;
         for (int j = 0; j < 8; j++) {
-            mirror_out += mirror_in;
+            mirror_out += mirror_in % 3 * mirror_corner_coeff[j];
             mirror_in /= 3;
-            coeff /= 3;
         }
         if (mirror_out < i) {
             eval->mirror_corner[i] = mirror_out;
