@@ -13,17 +13,13 @@
 #include "com.h"
 #include "evaluator.h"
 
-const char option_str[] = "options:\n \
-    -b\n \
-        play with BLACK turn (by default)\n \
-    -w\n \
-        play with WHITE turn\n \
-    -c\n \
-        COM vs COM\n \
+const char option_str[] = "options\n \
+    -b  play with BLACK (by default)\n \
+    -w  play with WHITE\n \
+    -c  COM vs COM\n \
     -l iterations\n\
-        learning with self-playing (specify iterations) \n \
-    -h\n \
-        show this help\n";
+        self-playing learning by specified iterations\n \
+    -h  show this help\n";
 
 #define EVAL_FILE "eval.dat"
 
@@ -38,6 +34,35 @@ static void show_prompt(Disk turn) {
     } else {
         printf("White(O) >> ");
     }
+}
+
+static void print_board(const Board *board, const Disk turn) {
+    printf("    A B C D E F G H \n");
+    printf("  +-----------------+\n");
+    for (int y = 0; y < BOARD_SIZE; y++) {
+        printf("%d | ", (y + 1));
+        for (int x = 0; x < BOARD_SIZE; x++) {
+            Pos pos = XY2POS(x, y);
+            switch (Board_disk(board, pos)) {
+                case WHITE:
+                    printf("O ");
+                    break;
+                case BLACK:
+                    printf("@ ");
+                    break;
+                default:
+                    if (Board_can_flip(board, turn, pos)) {
+                        printf("* ");
+                    } else {
+                        printf("- ");
+                    }
+                    break;
+            }
+        }
+        printf("|\n");
+    }
+    printf("  +-----------------+\n");
+    printf("@:%2d O:%2d\n", Board_count_disks(board, BLACK), Board_count_disks(board, WHITE));
 }
 
 /// 
@@ -65,7 +90,7 @@ static Pos get_input(Board *board, Disk turn) {
         if (Board_can_flip(board, turn, move)) {
             break;
         } else {
-            Board_print(board, turn);
+            print_board(board, turn);
             show_prompt(turn);
         }
     }
@@ -99,7 +124,7 @@ static void move_random(Board *board, Disk color) {
     while(!Board_flip(board, color, XY2POS(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
 }
 
-void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
+static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
     int  history[BOARD_SIZE * BOARD_SIZE];
 
     Com_set_level(com, 4, 12, 12);
@@ -171,8 +196,7 @@ static void play(Board *board, Com *com, Disk player) {
     int val;
 
     while (true) {
-        Board_print(board, turn);
-        printf("@:%2d O:%2d\n", Board_count_disks(board, BLACK), Board_count_disks(board, WHITE));
+        print_board(board, turn);
 
         if (Board_can_play(board, turn)) {
             show_prompt(turn);

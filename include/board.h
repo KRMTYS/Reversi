@@ -187,12 +187,4 @@ void Board_copy(const Board *src, Board *dst);
 ///
 void Board_reverse(Board *board);
 
-///
-/// @fn     Board_print
-/// @brief  盤面を描画する
-/// @param[in]  board   盤面
-/// @param[in]  turn    現在の手番
-///
-void Board_print(const Board *board, Disk turn);
-
 #endif // BOARD_H_

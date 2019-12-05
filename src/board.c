@@ -6,7 +6,6 @@
 
 #include "board.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 // スタック長
@@ -250,32 +249,4 @@ void Board_reverse(Board *board) {
         *p = OPPONENT(*p);  // 色を反転
         p -= (count + 1);   // （石数+着手）分さかのぼる
     }
-}
-
-void Board_print(const Board *board, Disk turn) {
-    printf("    A B C D E F G H \n");
-    printf("  +-----------------+\n");
-    for (int y = 0; y < BOARD_SIZE; y++) {
-        printf("%d | ", (y + 1));
-        for (int x = 0; x < BOARD_SIZE; x++) {
-            Pos pos = XY2POS(x, y);
-            switch (board->disks[pos]) {
-                case WHITE:
-                    printf("O ");
-                    break;
-                case BLACK:
-                    printf("@ ");
-                    break;
-                default:
-                    if (Board_can_flip(board, turn, pos)) {
-                        printf("* ");
-                    } else {
-                        printf("- ");
-                    }
-                    break;
-            }
-        }
-        printf("|\n");
-    }
-    printf("  +-----------------+\n");
 }
