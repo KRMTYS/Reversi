@@ -20,8 +20,9 @@
 struct Board_ {
     Disk disks[BOARD_LENGTH];   ///< マス情報
     int  stack[STACK_SIZE];     ///< 返した石を記録するスタック
-                                ///< （返した石の位置1）（~N）... 、（着手位置）、（相手の石色）、（返した石数）
+                                ///< （返した石の位置1）...（~N）、（着手位置）、（相手の石色）、（返した石数）
     int  *sp;                   ///< スタックポインタ
+    int  disk_num[3];           ///< 石数（0: 黒 1: 白、2: 空）
 };
 
 ///
@@ -86,6 +87,10 @@ void Board_init(Board *board) {
     board->disks[E5] = WHITE;
 
     board->sp = board->stack;
+
+    board->disk_num[BLACK] = 2;
+    board->disk_num[WHITE] = 2;
+    board->disk_num[EMPTY] = (BOARD_SIZE * BOARD_SIZE) - 4;
 }
 
 Disk Board_disk(const Board *board, Pos pos) {
@@ -93,15 +98,7 @@ Disk Board_disk(const Board *board, Pos pos) {
 }
 
 int Board_count_disks(const Board *board, Disk disk) {
-    int count = 0;
-
-    for (Pos pos = 0; pos < BOARD_LENGTH; pos++) {
-        if (board->disks[pos] == disk) {
-            count++;
-        }
-    }
-
-    return count;
+    return board->disk_num[disk];
 }
 
 static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
@@ -145,6 +142,10 @@ int Board_flip(Board *board, Disk disk, Pos pos) {
         STACK_PUSH(board, pos);
         STACK_PUSH(board, OPPONENT(disk));
         STACK_PUSH(board, count);
+
+        board->disk_num[disk] += (count + 1);
+        board->disk_num[OPPONENT(disk)] -= count;
+        board->disk_num[EMPTY]--;
     }
 
     return count;
@@ -163,6 +164,10 @@ int Board_unflip(Board *board) {
     for (int i = 0; i < count; i++) {
         board->disks[STACK_POP(board)] = color;
     }
+
+    board->disk_num[color] += count;
+    board->disk_num[OPPONENT(color)] -= (count + 1);
+    board->disk_num[EMPTY]++;
 
     return count;
 }
@@ -236,13 +241,22 @@ void Board_copy(const Board *src, Board *dst) {
 void Board_reverse(Board *board) {
     for (Pos pos = 0; pos < BOARD_LENGTH; pos++) {
         switch (board->disks[pos]) {
-            case BLACK: board->disks[pos] = WHITE; break;
-            case WHITE: board->disks[pos] = BLACK; break;
-            default: break;
+            case BLACK:
+                board->disks[pos] = WHITE;
+                board->disk_num[BLACK]--;
+                board->disk_num[WHITE]++;
+                break;
+            case WHITE:
+                board->disks[pos] = BLACK;
+                board->disk_num[WHITE]--;
+                board->disk_num[BLACK]++;
+                break;
+            default:
+                break;
         }
     }
 
-    for (int *p = board->sp; p > board->stack; ) {
+    for (int *p = board->sp; p > board->stack;) {
         p--;
         int count = *p;     // 返した石数
         p--;
