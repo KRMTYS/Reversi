@@ -128,14 +128,106 @@ int Board_flip(Board *board, Disk disk, Pos pos) {
         return 0;
     }
 
-    count += flip_line(board, disk, pos, UPPER);
-    count += flip_line(board, disk, pos, UPPER_RIGHT);
-    count += flip_line(board, disk, pos, UPPER_LEFT);
-    count += flip_line(board, disk, pos, RIGHT);
-    count += flip_line(board, disk, pos, LEFT);
-    count += flip_line(board, disk, pos, LOWER);
-    count += flip_line(board, disk, pos, LOWER_RIGHT);
-    count += flip_line(board, disk, pos, LOWER_LEFT);
+    switch (pos) {
+        case C1:
+        case C2:
+        case D1:
+        case D2:
+        case E1:
+        case E2:
+        case F1:
+        case F2:
+            count += flip_line(board, disk, pos, RIGHT);
+            count += flip_line(board, disk, pos, LOWER_RIGHT);
+            count += flip_line(board, disk, pos, LOWER);
+            count += flip_line(board, disk, pos, LOWER_LEFT);
+            count += flip_line(board, disk, pos, LEFT);
+            break;
+        case C8:
+        case C7:
+        case D8:
+        case D7:
+        case E8:
+        case E7:
+        case F8:
+        case F7:
+            count += flip_line(board, disk, pos, LEFT);
+            count += flip_line(board, disk, pos, UPPER_LEFT);
+            count += flip_line(board, disk, pos, UPPER);
+            count += flip_line(board, disk, pos, UPPER_RIGHT);
+            count += flip_line(board, disk, pos, RIGHT);
+            break;
+        case A3:
+        case A4:
+        case A5:
+        case A6:
+        case B3:
+        case B4:
+        case B5:
+        case B6:
+            count += flip_line(board, disk, pos, UPPER);
+            count += flip_line(board, disk, pos, UPPER_RIGHT);
+            count += flip_line(board, disk, pos, RIGHT);
+            count += flip_line(board, disk, pos, LOWER_LEFT);
+            count += flip_line(board, disk, pos, LOWER);
+            break;
+        case H3:
+        case H4:
+        case H5:
+        case H6:
+        case G3:
+        case G4:
+        case G5:
+        case G6:
+            count += flip_line(board, disk, pos, LOWER);
+            count += flip_line(board, disk, pos, LOWER_LEFT);
+            count += flip_line(board, disk, pos, LEFT);
+            count += flip_line(board, disk, pos, UPPER_LEFT);
+            count += flip_line(board, disk, pos, UPPER);
+            break;
+        case A1:
+        case A2:
+        case B1:
+        case B2:
+            count += flip_line(board, disk, pos, RIGHT);
+            count += flip_line(board, disk, pos, LOWER_RIGHT);
+            count += flip_line(board, disk, pos, LOWER);
+            break;
+        case A8:
+        case A7:
+        case B8:
+        case B7:
+            count += flip_line(board, disk, pos, UPPER);
+            count += flip_line(board, disk, pos, UPPER_RIGHT);
+            count += flip_line(board, disk, pos, RIGHT);
+            break;
+        case H1:
+        case H2:
+        case G1:
+        case G2:
+            count += flip_line(board, disk, pos, LOWER);
+            count += flip_line(board, disk, pos, LOWER_LEFT);
+            count += flip_line(board, disk, pos, LEFT);
+            break;
+        case H8:
+        case H7:
+        case G8:
+        case G7:
+            count += flip_line(board, disk, pos, LEFT);
+            count += flip_line(board, disk, pos, UPPER_LEFT);
+            count += flip_line(board, disk, pos, UPPER);
+            break;
+        default:
+            count += flip_line(board, disk, pos, UPPER);
+            count += flip_line(board, disk, pos, UPPER_RIGHT);
+            count += flip_line(board, disk, pos, RIGHT);
+            count += flip_line(board, disk, pos, LOWER_RIGHT);
+            count += flip_line(board, disk, pos, LOWER);
+            count += flip_line(board, disk, pos, LOWER_LEFT);
+            count += flip_line(board, disk, pos, LEFT);
+            count += flip_line(board, disk, pos, UPPER_LEFT);
+            break;
+    }
 
     if (count > 0) {
         board->disks[pos] = disk;
@@ -256,7 +348,7 @@ void Board_reverse(Board *board) {
         }
     }
 
-    for (int *p = board->sp; p > board->stack;) {
+    for (int *p = board->sp; p > board->stack; ) {
         p--;
         int count = *p;     // 返した石数
         p--;
