@@ -20,6 +20,15 @@ typedef struct MoveList_ {
 } MoveList;
 
 ///
+/// @struct MoveInfo
+/// @brief  着手情報
+///
+typedef struct MoveInfo_ {
+    MoveList *move; ///< 着手位置
+    int value;      ///< 評価値
+} MoveInfo;
+
+///
 /// @struct Com_
 /// @brief  COM思考ルーチン
 ///
@@ -131,9 +140,44 @@ void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld) {
     com->wld_depth   = th_wld;
 }
 
+static int sort_moves(Com *com, Disk color, MoveInfo *moveinfo) {
+    int info_num = 0;
+    MoveList *p;
+    MoveInfo tmp_info, *best_info;
+
+    for (p = com->moves->next; p; (p = p->next)) {
+        if (Board_flip(com->board, color, p->pos) > 0) {
+            moveinfo[info_num].move = p;
+            moveinfo[info_num].value = Evaluator_evaluate(com->evaluator, com->board);
+            info_num++;
+            Board_unflip(com->board);
+        }
+    }
+    if (color == WHITE) {
+        for (int i = 0; i < info_num; i++) {
+            moveinfo[i].value = -moveinfo[i].value;
+        }
+    }
+    for (int i = 0; i < info_num; i++) {
+        best_info = &moveinfo[i];
+
+        for (int j = (i + 1); j < info_num; j++) {
+            if (moveinfo[j].value > best_info->value) {
+                best_info = &moveinfo[j];
+            }
+        }
+
+        tmp_info    = *best_info;
+        *best_info  = moveinfo[i];
+        moveinfo[i] = tmp_info;
+    }
+
+    return info_num;
+}
+
 ///
 /// @fn     Com_mid_search
-/// @brief  NegaAlpha法による再帰探索
+/// @brief  NegaAlpha法による中盤探索
 /// @param[in]  com         COM
 /// @param[in]  turn        現在の手番色
 /// @param[in]  opponent    相手の手番色
@@ -152,75 +196,95 @@ static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos *next_move, in
     }
 
     Pos move;
+    MoveList *p;
+    int value;
+    int max = alpha;
     bool has_move = false;
+
+    MoveInfo info[BOARD_SIZE * BOARD_SIZE / 2];
+    int info_num;
 
     *next_move = NONE;
 
-    // 候補手リストを探索
-    MoveList *p;
-    for (p = com->moves->next; p; (p = p->next)) {
-        if (Board_flip(com->board, turn, p->pos) > 0) {
-            if (!has_move) {
-                *next_move = p->pos;
-                has_move = true;
-            }
+    // 残り手数が2より多いとき候補手を並び替える
+    if (depth > 2) {
+        info_num = sort_moves(com, turn, info);
 
-            int value = -Com_mid_search(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
-
+        if (info_num > 0) {
+            *next_move = info[0].move->pos;
+            has_move = true;
+        }
+        for (int i = 0; i < info_num; i++) {
+            Board_flip(com->board, turn, info[i].move->pos);
+            remove_list(info[i].move);
+            value = -Com_mid_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
             Board_unflip(com->board);
+            recover_list(info[i].move);
 
-            // alphaカット: 下限値での枝刈り
-            if (value > alpha) {
-                alpha = value;
-                *next_move = p->pos;
-                // betaカット: 上限値での枝刈り
-                if (alpha >= beta) {
+            if (value > max) {
+                max = value;
+                *next_move = info[i].move->pos;
+                if (max >= beta) {
                     return beta;
                 }
             }
         }
+    } else {
+        // 候補手リストを探索
+        for (p = com->moves->next; p; (p = p->next)) {
+            if (Board_flip(com->board, turn, p->pos) > 0) {
+                remove_list(p);
+                if (!has_move) {
+                    *next_move = p->pos;
+                    has_move = true;
+                }
+
+                value = -Com_mid_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
+
+                Board_unflip(com->board);
+                recover_list(p);
+
+                // alphaカット: 下限値での枝刈り
+                if (value > max) {
+                    max = value;
+                    *next_move = p->pos;
+                    // betaカット: 上限値での枝刈り
+                    if (max >= beta) {
+                        return beta;
+                    }
+                }
+            }
+        }
     }
-    //for (int y = 0; y < BOARD_SIZE; y++) {
-    //    for (int x = 0; x < BOARD_SIZE; x++) {
-    //        if (Board_flip(com->board, turn, XY2POS(x, y)) > 0) {
-    //            if (!has_move) {
-    //                *next_move = XY2POS(x, y);
-    //                has_move = true;
-    //            }
-
-    //            int value = -Com_mid_search(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
-
-    //            Board_unflip(com->board);
-
-    //            // alphaカット: 下限値での枝刈り
-    //            if (value > alpha) {
-    //                alpha = value;
-    //                *next_move = XY2POS(x, y);
-    //                // betaカット: 上限値での枝刈り
-    //                if (alpha >= beta) {
-    //                    return beta;
-    //                }
-    //            }
-    //        }
-    //    }
-    //}
 
     if (!has_move) {
         if (!Board_can_play(com->board, opponent)) {
             // 互いに有効手ないときゲーム終了、石数差の評価値を返す
             *next_move = NONE;
             com->node++;
-            alpha = DISK_VALUE * (Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent));
+            max = DISK_VALUE * (Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent));
         } else {
             // 相手に有効手あるときパス、手番を変更して探索を続ける
             *next_move = NONE;
-            alpha = -Com_mid_search(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
+            max = -Com_mid_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
         }
     }
 
-    return alpha;
+    return max;
 }
 
+///
+/// @fn     Com_end_search
+/// @brief  NegaAlpha法による終盤探索
+/// @param[in]  com         COM
+/// @param[in]  turn        現在の手番色
+/// @param[in]  opponent    相手の手番色
+/// @param[out] next_move   次手の座標
+/// @param[in]  alpha       alphaカット閾値
+/// @param[in]  beta        betaカット閾値
+/// @param[in]  depth       残りの探索深さ
+/// @return 盤面の評価値
+///
 static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* next_move, int alpha, int beta, int depth) {
     if (depth == 0) {
         com->node++;
@@ -228,29 +292,54 @@ static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* next_move, in
     }
 
     Pos move;
+    MoveList *p;
+    int value;
+    int max = alpha;
     bool has_move = false;
+
+    // 残り1マスのとき返せる石数のみ調べる
+    if (depth == 1) {
+        com->node++;
+        p = com->moves->next;
+        value = Board_count_flips(com->board, turn, p->pos);
+        max = Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent);
+        if (value > 0) {
+            *next_move = p->pos;
+            return (max + value + value + 1);
+        }
+        value = Board_count_flips(com->board, opponent, com->moves->next->pos);
+        if (value > 0) {
+            *next_move = NONE;
+            return (max - value - value - 1);
+        }
+
+        *next_move = NONE;
+
+        return max;
+    }
 
     *next_move = NONE;
 
     // 候補手リストを探索
-    MoveList *p;
     for (p = com->moves->next; p; (p = p->next)) {
         if (Board_flip(com->board, turn, p->pos) > 0) {
+            remove_list(p);
             if (!has_move) {
                 *next_move = p->pos;
                 has_move = true;
             }
 
-            int value = -Com_end_search(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
+            int value = -Com_end_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
 
             Board_unflip(com->board);
+            recover_list(p);
 
             // alphaカット
-            if (value > alpha) {
-                alpha = value;
+            if (value > max) {
+                max = value;
                 *next_move = p->pos;
                 // betaカット
-                if (alpha >= beta) {
+                if (max >= beta) {
                     return beta;
                 }
             }
@@ -266,11 +355,11 @@ static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* next_move, in
         } else {
             // 相手に有効手あるときパス、手番を変更して探索を続ける
             *next_move = NONE;
-            alpha = -Com_end_search(com, opponent, turn, &move, -beta, -alpha, (depth - 1));
+            alpha = -Com_end_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
         }
     }
 
-    return alpha;
+    return max;
 }
 
 Pos Com_get_nextmove(Com *com, Board *board, Disk turn, int *value) {
