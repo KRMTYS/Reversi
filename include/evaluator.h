@@ -19,7 +19,7 @@
 /// @def    MAX_PATTERN_VALUE
 /// @brief  評価値の上限値
 ///
-#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
+//#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
 
 ///
 /// @typedef    Evaluator
@@ -74,12 +74,20 @@ void Evaluator_save(Evaluator *eval, const char *file);
 int Evaluator_evaluate(Evaluator *eval, Board *board);
 
 ///
+/// @fn     Evaluator_add
+/// @brief  局面を登録する
+/// @param[in]  eval    評価器
+/// @param[in]  board   盤面
+/// @param[in]  value   評価値
+/// @return 局面の評価値
+///
+void Evaluator_add(Evaluator *eval, const Board *board, int value);
+
+///
 /// @fn     Evaluator_update
 /// @brief  評価値を更新する
 /// @param[in]  eval    評価器
-/// @param[in]  board   盤面
-/// @param[in]  value   局面の評価値
 ///
-void Evaluator_update(Evaluator *eval, Board *board, int value);
+void Evaluator_update(Evaluator *eval);
 
 #endif // EVALUATOR_H_

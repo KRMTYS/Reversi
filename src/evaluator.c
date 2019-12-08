@@ -15,7 +15,15 @@
 /// @def    UPDATE_RATIO
 /// @brief  評価値の更新率
 ///
-#define UPDATE_RATIO 0.003
+#define UPDATE_RATIO 0.005
+
+///
+/// @def    MAX_PATTERN_VALUE
+/// @brief  評価値の上限値
+///
+#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
+
+#define MIN_FREQUNECY 10
 
 ///
 /// @def    PATTERN_IDX(N)
@@ -123,6 +131,8 @@ static const int pattern_size[] = {
 ///
 struct Evaluator_ {
     int *values[PATTERN_NUM];   ///< 各パターンに対する評価値
+    int *pattern_num[PATTERN_NUM];  ///< パターンの出現回数
+    double *pattern_sum[PATTERN_NUM];   ///< 評価値差分の合計
     int mirror_line[POW3_8];    ///< 対称な列パターンを調べるための変数
     int mirror_corner[POW3_8];  ///< 対称なコーナーパターンを調べるための変数
 };
@@ -145,6 +155,10 @@ void Evaluator_init(Evaluator *eval) {
 
     for (int i = 0; i < PATTERN_NUM; i++) {
         eval->values[i] = calloc(pattern_size[i], sizeof(int));
+
+        eval->pattern_num[i] = calloc(pattern_size[i], sizeof(int));
+
+        eval->pattern_sum[i] = calloc(pattern_size[i], sizeof(double));
     }
 
     for (int i = 0; i < POW3_8; i++) {
@@ -186,6 +200,12 @@ void Evaluator_delete(Evaluator *eval) {
     for (int i = 0; i < PATTERN_NUM; i++) {
         free(eval->values[i]);
         eval->values[i] = NULL;
+
+        free(eval->pattern_num[i]);
+        eval->pattern_num[i] = NULL;
+
+        free(eval->pattern_sum[i]);
+        eval->pattern_sum[i] = NULL;
     }
 
     free(eval);
@@ -282,6 +302,21 @@ int Evaluator_evaluate(Evaluator *eval, Board *board) {
     result += eval->values[PATTERN_PARITY][Board_count_disks(board, EMPTY) & 1];
 
     return result;
+}
+
+static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double diff) {
+    eval->pattern_num[pattern][id]++;
+    eval->pattern_num[pattern][id] += diff;
+
+    if (mirror >= 0) {
+        eval->pattern_num[pattern][mirror] = eval->pattern_num[pattern][id];
+        eval->pattern_sum[pattern][mirror] = eval->pattern_num[pattern][id];
+    }
+}
+
+void Evaluator_add(Evaluator *eval, const Board *board, int value) {
+    int index;
+    double diff;
 }
 
 ///
