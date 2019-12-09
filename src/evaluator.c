@@ -238,7 +238,7 @@ void Evaluator_save(Evaluator *eval, const char *file) {
     fclose(fp);
 }
 
-int Evaluator_evaluate(Evaluator *eval, Board *board) {
+int Evaluator_evaluate(Evaluator *eval, const Board *board) {
     int result = 0;
 
     result += eval->values[PATTERN_HV4][PATTERN_IDX_8(board, A4, B4, C4, D4, E4, F4, G4, H4)];

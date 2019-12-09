@@ -129,6 +129,8 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
 
     Com_set_level(com, 4, 12, 12);
 
+    printf("Start learning\n");
+
     for (int i = 0; i < iteration; i++) {
         Disk color = BLACK;
         Pos move;
@@ -163,6 +165,7 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
             color = OPPONENT(color);
         }
 
+        int result = (Board_count_disks(board, BLACK) - Board_count_disks(board, WHITE)) * DISK_VALUE;
         for (int j = Board_count_disks(board, EMPTY); j < 8; j++) {
             turn--;
             Board_unflip(board);
@@ -171,12 +174,19 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
             turn--;
             Board_unflip(board);
             if (history[turn] == BLACK) {
-                Evaluator_update(evaluator);
+                // 局面の登録
+                Evaluator_add(evaluator, board, result);
             } else {
                 Board_reverse(board);
-                Evaluator_update(evaluator);
+                // 局面の登録
+                Evaluator_add(evaluator, board, result);
                 Board_reverse(board);
             }
+        }
+
+        // パラメータ更新
+        if ((i + 1) % 10 == 0) {
+            Evaluator_update(evaluator);
         }
 
         if ((i + 1) % 100 == 0) {
