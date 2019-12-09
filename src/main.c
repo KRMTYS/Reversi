@@ -163,7 +163,6 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
             color = OPPONENT(color);
         }
 
-        int result = (Board_count_disks(board, BLACK) - Board_count_disks(board, WHITE)) * DISK_VALUE;
         for (int j = Board_count_disks(board, EMPTY); j < 8; j++) {
             turn--;
             Board_unflip(board);
@@ -172,10 +171,10 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
             turn--;
             Board_unflip(board);
             if (history[turn] == BLACK) {
-                Evaluator_update(evaluator, board, result);
+                Evaluator_update(evaluator);
             } else {
                 Board_reverse(board);
-                Evaluator_update(evaluator, board, -result);
+                Evaluator_update(evaluator);
                 Board_reverse(board);
             }
         }

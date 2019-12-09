@@ -19,6 +19,12 @@
 /// @def    MAX_PATTERN_VALUE
 /// @brief  評価値の上限値
 ///
+#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
+
+///
+/// @def    MAX_PATTERN_VALUE
+/// @brief  評価値の上限値
+///
 //#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
 
 ///

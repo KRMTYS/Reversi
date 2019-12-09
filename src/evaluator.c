@@ -17,12 +17,6 @@
 ///
 #define UPDATE_RATIO 0.005
 
-///
-/// @def    MAX_PATTERN_VALUE
-/// @brief  評価値の上限値
-///
-#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
-
 #define MIN_FREQUNECY 10
 
 ///
@@ -317,127 +311,129 @@ static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double
 void Evaluator_add(Evaluator *eval, const Board *board, int value) {
     int index;
     double diff;
-}
 
-///
-/// @fn     Evaluator_update_pattern
-/// @brief  パターンの評価値を更新する
-/// @param[in]  eval    評価器
-/// @param[in]  pattern 更新するパターンの種類
-/// @param[in]  idx     更新するパターンインデックス
-/// @param[in]  mirror  更新パターンと対称なパターンインデックス
-/// @param[in]  diff    評価値の差分
-///
-static void Evaluator_update_pattern(Evaluator *eval, int pattern, int idx, int mirror, int diff) {
-    if ((MAX_PATTERN_VALUE - diff) < eval->values[pattern][idx]) {
-        eval->values[pattern][idx] = MAX_PATTERN_VALUE;
-    } else if ((-MAX_PATTERN_VALUE - diff) > eval->values[pattern][idx]) {
-        eval->values[pattern][idx] = -MAX_PATTERN_VALUE;
-    } else {
-        eval->values[pattern][idx] += diff;
-    }
+    diff = (double)(value - Evaluator_evaluate(eval, board));
 
-    if (mirror >= 0) {
-        eval->values[pattern][mirror] = eval->values[pattern][idx];
-    }
-}
-
-void Evaluator_update(Evaluator *eval, Board *board, int value) {
-    int diff = (int)((value - Evaluator_evaluate(eval, board)) * UPDATE_RATIO);
-
-    int index = PATTERN_IDX_8(board, A4, B4, C4, D4, E4, F4, G4, H4);
-    Evaluator_update_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
+    index = PATTERN_IDX_8(board, A4, B4, C4, D4, E4, F4, G4, H4);
+    add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, A5, B5, C5, D5, E5, F5, G5, H5);
-    Evaluator_update_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, D1, D2, D3, D4, D5, D6, D7, D8);
-    Evaluator_update_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, E1, E2, E3, E4, E5, E6, E7, E8);
-    Evaluator_update_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
 
     index = PATTERN_IDX_8(board, A3, B3, C3, D3, E3, F3, G3, H3);
-    Evaluator_update_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, A6, B6, C6, D6, E6, F6, G6, H6);
-    Evaluator_update_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, C1, C2, C3, C4, C5, C6, C7, C8);
-    Evaluator_update_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, F1, F2, F3, F4, F5, F6, F7, F8);
-    Evaluator_update_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
 
     index = PATTERN_IDX_8(board, A2, B2, C2, D2, E2, F2, G2, H2);
-    Evaluator_update_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, A7, B7, C7, D7, E7, F7, G7, H7);
-    Evaluator_update_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, B1, B2, B3, B4, B5, B6, B7, B8);
-    Evaluator_update_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, G1, G2, G3, G4, G5, G6, G7, G8);
-    Evaluator_update_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
 
     index = PATTERN_IDX_8(board, A1, B2, C3, D4, E5, F6, G7, H8);
-    Evaluator_update_pattern(eval, PATTERN_DIAG8, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_DIAG8, eval->mirror_line[index], index, diff);
     index = PATTERN_IDX_8(board, A8, B8, C6, D5, E4, F3, G2, H1);
-    Evaluator_update_pattern(eval, PATTERN_DIAG8, eval->mirror_line[index], index, diff);
+    add_pattern(eval, PATTERN_DIAG8, eval->mirror_line[index], index, diff);
 
     index = PATTERN_IDX_7(board, A2, B3, C4, D5, E6, F7, G8);
-    Evaluator_update_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
+    add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
     index = PATTERN_IDX_7(board, B1, C2, D3, E4, F5, G6, H7);
-    Evaluator_update_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
+    add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
     index = PATTERN_IDX_7(board, A7, B7, C5, D4, E3, F2, G1);
-    Evaluator_update_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
+    add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
     index = PATTERN_IDX_7(board, B8, C7, D5, E5, F4, G3, H2);
-    Evaluator_update_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
+    add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
 
     index = PATTERN_IDX_6(board, A3, B4, C5, D6, E7 ,F8);
-    Evaluator_update_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
+    add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
     index = PATTERN_IDX_6(board, C1, D2, E3, F4, G5, H6);
-    Evaluator_update_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
+    add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
     index = PATTERN_IDX_6(board, A6, B5, C4, D3, E2, F1);
-    Evaluator_update_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
+    add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
     index = PATTERN_IDX_6(board, C8, D7, E6, F5, G4, H3);
-    Evaluator_update_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
+    add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
 
     index = PATTERN_IDX_5(board, A4, B5, C6, D7, E8);
-    Evaluator_update_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
+    add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
     index = PATTERN_IDX_5(board, D1, E2, F3, G4, H5);
-    Evaluator_update_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
+    add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
     index = PATTERN_IDX_5(board, A5, B4, C3, D2, E1);
-    Evaluator_update_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
+    add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
     index = PATTERN_IDX_5(board, D8, E7, F6, G5, H4);
-    Evaluator_update_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
+    add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
 
     index = PATTERN_IDX_4(board, A5, B6, C7, D8);
-    Evaluator_update_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
+    add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
     index = PATTERN_IDX_4(board, E1, F2, G3, H4);
-    Evaluator_update_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
+    add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
     index = PATTERN_IDX_4(board, A4, B3, C2, D1);
-    Evaluator_update_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
+    add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
     index = PATTERN_IDX_4(board, E8, F7, G6, H5);
-    Evaluator_update_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
+    add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
 
     index = PATTERN_IDX_8(board, A1, B1, C1, D1, E1, F1, G1, B2);
-    Evaluator_update_pattern(eval, PATTERN_EDGE8, index, -1, diff);
+    add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
     index = PATTERN_IDX_8(board, H1, G1, F1, E1, D1, C1, B1, G2);
-    Evaluator_update_pattern(eval, PATTERN_EDGE8, index, -1, diff);
+    add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
     index = PATTERN_IDX_8(board, A8, B8, C8, D8, E8, F8, G8, B7);
-    Evaluator_update_pattern(eval, PATTERN_EDGE8, index, -1, diff);
+    add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
     index = PATTERN_IDX_8(board, H8, G8, F8, E8, D8, C8, B8, G7);
-    Evaluator_update_pattern(eval, PATTERN_EDGE8, index, -1, diff);
+    add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
     index = PATTERN_IDX_8(board, A1, A2, A3, A4, A5, A6, A7, B2);
-    Evaluator_update_pattern(eval, PATTERN_EDGE8, index, -1, diff);
+    add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
     index = PATTERN_IDX_8(board, A8, A7, A6, A5, A4, A3, A2, B7);
-    Evaluator_update_pattern(eval, PATTERN_EDGE8, index, -1, diff);
+    add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
     index = PATTERN_IDX_8(board, H1, H2, H3, H4, H5, H6, H7, G2);
-    Evaluator_update_pattern(eval, PATTERN_EDGE8, index, -1, diff);
+    add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
     index = PATTERN_IDX_8(board, H8, H7, H6, H5, H4, H3, H2, G7);
-    Evaluator_update_pattern(eval, PATTERN_EDGE8, index, -1, diff);
+    add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
 
     index = PATTERN_IDX_8(board, A1, B1, C1, A2, B2, C2, A3, B3);
-    Evaluator_update_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
+    add_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
     index = PATTERN_IDX_8(board, H1, G1, F1, H2, G2, F2, H3, G3);
-    Evaluator_update_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
+    add_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
     index = PATTERN_IDX_8(board, A8, B8, C8, A7, B7, C7, A6, B6);
-    Evaluator_update_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
+    add_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
     index = PATTERN_IDX_8(board, H8, G8, F8, H7, G7, F7, H6, G6);
-    Evaluator_update_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
+    add_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
 
-    Evaluator_update_pattern(eval, PATTERN_PARITY, (Board_count_disks(board, EMPTY) & 1), -1, diff);
+    add_pattern(eval, PATTERN_PARITY, (Board_count_disks(board, EMPTY) & 1), -1, diff);
+}
+
+static void Evaluator_update_pattern(Evaluator *eval, int pattern, int id) {
+    int diff;
+
+    if (eval->pattern_num[pattern][id] > MIN_FREQUNECY) {
+        diff = (int)(eval->pattern_sum[pattern][id] / eval->pattern_num[pattern][id] * UPDATE_RATIO);
+
+        if ((MAX_PATTERN_VALUE - diff) < eval->values[pattern][id]) {
+            eval->values[pattern][id] = MAX_PATTERN_VALUE;
+        } else if ((-MAX_PATTERN_VALUE - diff) > eval->values[pattern][id]) {
+            eval->values[pattern][id] = -MAX_PATTERN_VALUE;
+        } else {
+            eval->values[pattern][id] += diff;
+        }
+
+        eval->pattern_num[pattern][id] = 0;
+        eval->pattern_sum[pattern][id] = 0;
+    }
+}
+
+void Evaluator_update(Evaluator *eval) {
+    for (int i = 0; i < PATTERN_NUM; i++) {
+        for (int j = 0; j < pattern_size[i]; j++) {
+            Evaluator_update_pattern(eval, i, j);
+        }
+    }
 }
