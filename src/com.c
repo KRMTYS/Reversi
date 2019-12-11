@@ -146,11 +146,11 @@ static int sort_moves(Com *com, Disk color, MoveInfo *moveinfo) {
     MoveInfo tmp_info, *best_info;
 
     for (p = com->moves->next; p; (p = p->next)) {
-        if (Board_flip(com->board, color, p->pos) > 0) {
+        if (Board_flip_pattern(com->board, color, p->pos) > 0) {
             moveinfo[info_num].move = p;
             moveinfo[info_num].value = Evaluator_evaluate(com->evaluator, com->board);
             info_num++;
-            Board_unflip(com->board);
+            Board_unflip_pattern(com->board);
         }
     }
     if (color == WHITE) {
@@ -215,10 +215,10 @@ static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos *next_move, in
             has_move = true;
         }
         for (int i = 0; i < info_num; i++) {
-            Board_flip(com->board, turn, info[i].move->pos);
+            Board_flip_pattern(com->board, turn, info[i].move->pos);
             remove_list(info[i].move);
             value = -Com_mid_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
-            Board_unflip(com->board);
+            Board_unflip_pattern(com->board);
             recover_list(info[i].move);
 
             if (value > max) {
@@ -232,7 +232,7 @@ static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos *next_move, in
     } else {
         // 候補手リストを探索
         for (p = com->moves->next; p; (p = p->next)) {
-            if (Board_flip(com->board, turn, p->pos) > 0) {
+            if (Board_flip_pattern(com->board, turn, p->pos) > 0) {
                 remove_list(p);
                 if (!has_move) {
                     *next_move = p->pos;
@@ -241,7 +241,7 @@ static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos *next_move, in
 
                 value = -Com_mid_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
 
-                Board_unflip(com->board);
+                Board_unflip_pattern(com->board);
                 recover_list(p);
 
                 // alphaカット: 下限値での枝刈り
@@ -297,6 +297,9 @@ static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* next_move, in
     int max = alpha;
     bool has_move = false;
 
+    MoveInfo info[BOARD_SIZE * BOARD_SIZE / 2];
+    int info_num;
+
     // 残り1マスのとき返せる石数のみ調べる
     if (depth == 1) {
         com->node++;
@@ -320,27 +323,51 @@ static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* next_move, in
 
     *next_move = NONE;
 
-    // 候補手リストを探索
-    for (p = com->moves->next; p; (p = p->next)) {
-        if (Board_flip(com->board, turn, p->pos) > 0) {
-            remove_list(p);
-            if (!has_move) {
-                *next_move = p->pos;
-                has_move = true;
-            }
+    if (depth > 8) {
+        info_num = sort_moves(com, turn, info);
 
-            int value = -Com_end_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
+        if (info_num > 0) {
+            *next_move = info[0].move->pos;
+            has_move = true;
+        }
+        for (int i = 0; i < info_num; i++) {
+            Board_flip_pattern(com->board, turn, info[i].move->pos);
+            remove_list(info[i].move);
+            value = -Com_mid_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
+            Board_unflip_pattern(com->board);
+            recover_list(info[i].move);
 
-            Board_unflip(com->board);
-            recover_list(p);
-
-            // alphaカット
             if (value > max) {
                 max = value;
-                *next_move = p->pos;
-                // betaカット
+                *next_move = info[i].move->pos;
                 if (max >= beta) {
                     return beta;
+                }
+            }
+        }
+    } else {
+        // 候補手リストを探索
+        for (p = com->moves->next; p; (p = p->next)) {
+            if (Board_flip(com->board, turn, p->pos) > 0) {
+                remove_list(p);
+                if (!has_move) {
+                    *next_move = p->pos;
+                    has_move = true;
+                }
+
+                int value = -Com_end_search(com, opponent, turn, &move, -beta, -max, (depth - 1));
+
+                Board_unflip(com->board);
+                recover_list(p);
+
+                // alphaカット
+                if (value > max) {
+                    max = value;
+                    *next_move = p->pos;
+                    // betaカット
+                    if (max >= beta) {
+                        return beta;
+                    }
                 }
             }
         }
@@ -373,6 +400,8 @@ Pos Com_get_nextmove(Com *com, Board *board, Disk turn, int *value) {
     int left = Board_count_disks(com->board, EMPTY);
 
     make_move_list(com);
+
+    Board_init_pattern(com->board);
 
     if (left <= com->exact_depth) {
         val = Com_end_search(com, turn, OPPONENT(turn), &next_move, -(BOARD_SIZE * BOARD_SIZE), (BOARD_SIZE * BOARD_SIZE), left);

@@ -17,10 +17,10 @@
 #define BOARD_SIZE 8
 
 ///
-/// @def    BOARD_SIZE
+/// @def    NUM_DISK
 /// @brief  番兵を含む盤面長
 ///
-#define BOARD_LENGTH 91
+#define NUM_DISK 91
 
 ///
 /// @enum   Disk
@@ -78,6 +78,52 @@ typedef enum {
 /// @brief  座標インデックスから行数を取得する
 ///
 #define POS2ROW(pos) ('0' + ((pos) / (BOARD_SIZE + 1) - 1))
+
+typedef enum {
+    PATTERN_HV4_1 = 0,
+    PATTERN_HV4_2,
+    PATTERN_HV4_3,
+    PATTERN_HV4_4,
+    PATTERN_HV3_1,
+    PATTERN_HV3_2,
+    PATTERN_HV3_3,
+    PATTERN_HV3_4,
+    PATTERN_HV2_1,
+    PATTERN_HV2_2,
+    PATTERN_HV2_3,
+    PATTERN_HV2_4,
+    PATTERN_DIAG8_1,
+    PATTERN_DIAG8_2,
+    PATTERN_DIAG7_1,
+    PATTERN_DIAG7_2,
+    PATTERN_DIAG7_3,
+    PATTERN_DIAG7_4,
+    PATTERN_DIAG6_1,
+    PATTERN_DIAG6_2,
+    PATTERN_DIAG6_3,
+    PATTERN_DIAG6_4,
+    PATTERN_DIAG5_1,
+    PATTERN_DIAG5_2,
+    PATTERN_DIAG5_3,
+    PATTERN_DIAG5_4,
+    PATTERN_DIAG4_1,
+    PATTERN_DIAG4_2,
+    PATTERN_DIAG4_3,
+    PATTERN_DIAG4_4,
+    PATTERN_EDGE8_1,
+    PATTERN_EDGE8_2,
+    PATTERN_EDGE8_3,
+    PATTERN_EDGE8_4,
+    PATTERN_EDGE8_5,
+    PATTERN_EDGE8_6,
+    PATTERN_EDGE8_7,
+    PATTERN_EDGE8_8,
+    PATTERN_CORNER8_1,
+    PATTERN_CORNER8_2,
+    PATTERN_CORNER8_3,
+    PATTERN_CORNER8_4,
+    NUM_PATTERN
+} PatternId;
 
 ///
 /// @typedef    Board
@@ -186,5 +232,13 @@ void Board_copy(const Board *src, Board *dst);
 /// @param[in]  board   盤面
 ///
 void Board_reverse(Board *board);
+
+void Board_init_pattern(Board *board);
+
+int Board_pattern(const Board *board, int id);
+
+int Board_flip_pattern(Board *board, Disk color, Pos pos);
+
+int Board_unflip_pattern(Board *board);
 
 #endif // BOARD_H_
