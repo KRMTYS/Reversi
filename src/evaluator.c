@@ -261,7 +261,7 @@ static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double
 
     if (mirror >= 0) {
         eval->pattern_num[pattern][mirror] = eval->pattern_num[pattern][id];
-        eval->pattern_sum[pattern][mirror] = eval->pattern_num[pattern][id];
+        eval->pattern_sum[pattern][mirror] = eval->pattern_sum[pattern][id];
     }
 }
 

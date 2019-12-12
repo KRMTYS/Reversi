@@ -179,7 +179,7 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
             } else {
                 Board_reverse(board);
                 // 局面の登録
-                Evaluator_add(evaluator, board, result);
+                Evaluator_add(evaluator, board, -result);
                 Board_reverse(board);
             }
         }
