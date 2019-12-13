@@ -8,12 +8,33 @@
 
 #include <stdlib.h>
 
+///
+/// @def    NUM_DISK
+/// @brief  マスの総数（番兵含む）
+///
+#define NUM_DISK ((BOARD_SIZE + 1) * (BOARD_SIZE + 2) + 1)
+
 // スタック長
 // 返せる最大の石数：(BOARD_SIZE - 2) * 3
 // 着手位置、相手の石色、返した石数の情報：3
 #define STACK_SIZE (((BOARD_SIZE - 2) * 3 + 3) * BOARD_SIZE * BOARD_SIZE - 4)
 
 #define NUM_PATTERN_DIFF 6
+
+///
+/// @enum   Dir
+/// @brief  盤面上での8方向インデックス
+///
+typedef enum {
+    UPPER_LEFT  = -10,  ///< 左上
+    UPPER       =  -9,  ///< 上
+    UPPER_RIGHT =  -8,  ///< 右上
+    LEFT        =  -1,  ///< 左
+    RIGHT       =   1,  ///< 右
+    LOWER_LEFT  =   8,  ///< 左下
+    LOWER       =   9,  ///< 下
+    LOWER_RIGHT =  10   ///< 右下
+} Dir;
 
 ///
 /// @struct Board_
@@ -25,9 +46,9 @@ struct Board_ {
                                 ///< （返した石の位置1）...（~N）、（着手位置）、（相手の石色）、（返した石数）
     int  *sp;                   ///< スタックポインタ
     int  disk_num[3];           ///< 石数（0: 黒 1: 白、2: 空）
-    int pattern[NUM_PATTERN];
-    int pattern_id[NUM_DISK][NUM_PATTERN_DIFF];
-    int pattern_diff[NUM_DISK][NUM_PATTERN_DIFF];
+    int  pattern[NUM_PATTERN];
+    int  pattern_id[NUM_DISK][NUM_PATTERN_DIFF];
+    int  pattern_diff[NUM_DISK][NUM_PATTERN_DIFF];
 };
 
 ///
@@ -42,29 +63,24 @@ struct Board_ {
 ///
 #define STACK_POP(board) (*(--(board)->sp))
 
-///
-/// @enum   Dir
-/// @brief  盤面上での8方向インデックス
-///
-typedef enum {
-    UPPER       =  -9,  ///< 上
-    UPPER_RIGHT =  -8,  ///< 右上
-    UPPER_LEFT  = -10,  ///< 左上
-    RIGHT       =   1,  ///< 右
-    LEFT        =  -1,  ///< 左
-    LOWER       =   9,  ///< 下
-    LOWER_RIGHT =  10,  ///< 右下
-    LOWER_LEFT  =   8   ///< 左下
-} Dir;
+static int flip_line(Board *board, Disk color, Pos pos, Dir dir);
 
-static int flip_line(Board *board, Disk disk, Pos pos, Dir dir);
-static int count_flips_line(const Board *board, Disk disk, Pos pos, Dir dir);
-
+static void add_pattern(Board *board, int id, const Pos *pos_list, int num);
 static void init_pattern_diff(Board *board);
+
+static void flip_square_black(Board *board, Pos pos);
+static void flip_square_white(Board *board, Pos pos);
+static void put_square_black(Board *board, Pos pos);
+static void put_square_white(Board *board, Pos pos);
+
 static int flip_line_pattern(Board *board, Disk disk, Pos pos, Dir dir);
 
-Board *Board_create(void) {
+static int count_flips_line(const Board *board, Disk disk, Pos pos, Dir dir);
+
+Board *Board_create(void)
+{
     Board *board = malloc(sizeof(Board));
+
     if (board) {
         init_pattern_diff(board);
         Board_init(board);
@@ -73,12 +89,14 @@ Board *Board_create(void) {
     return board;
 }
 
-void Board_delete(Board *board) {
+void Board_delete(Board *board)
+{
     free(board);
     board = NULL;
 }
 
-void Board_init(Board *board) {
+void Board_init(Board *board)
+{
     for (int i = 0; i < NUM_DISK; i++) {
         board->disks[i] = WALL;
     }
@@ -104,26 +122,29 @@ void Board_init(Board *board) {
     Board_init_pattern(board);
 }
 
-Disk Board_disk(const Board *board, Pos pos) {
+Disk Board_disk(const Board *board, Pos pos)
+{
     return board->disks[pos];
 }
 
-int Board_count_disks(const Board *board, Disk disk) {
-    return board->disk_num[disk];
+int Board_count_disks(const Board *board, Disk color)
+{
+    return board->disk_num[color];
 }
 
-static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
-    Pos cur_pos;
-    int count = 0;
-    Disk op = OPPONENT(disk);
+static int flip_line(Board *board, Disk color, Pos pos, Dir dir)
+{
+    Pos  cur_pos;
+    Disk op = OPPONENT(color);
 
     // 相手の石を探索
     for (cur_pos = (pos + dir); board->disks[cur_pos] == op; cur_pos += dir);
 
     // 終端が自分の石色であれば着手位置までたどりながら石を返す
-    if (board->disks[cur_pos] == disk) {
+    int count = 0;
+    if (board->disks[cur_pos] == color) {
         for (cur_pos -= dir; board->disks[cur_pos] == op; cur_pos -= dir) {
-            board->disks[cur_pos] = disk;
+            board->disks[cur_pos] = color;
             STACK_PUSH(board, cur_pos);
             count++;
         }
@@ -132,12 +153,13 @@ static int flip_line(Board *board, Disk disk, Pos pos, Dir dir) {
     return count;
 }
 
-int Board_flip(Board *board, Disk disk, Pos pos) {
-    int count = 0;
-    
+int Board_flip(Board *board, Disk color, Pos pos)
+{
     if (board->disks[pos] != EMPTY) {
         return 0;
     }
+
+    int count = 0;
 
     switch (pos) {
         case C1:
@@ -148,11 +170,11 @@ int Board_flip(Board *board, Disk disk, Pos pos) {
         case E2:
         case F1:
         case F2:
-            count += flip_line(board, disk, pos, RIGHT);
-            count += flip_line(board, disk, pos, LOWER_RIGHT);
-            count += flip_line(board, disk, pos, LOWER);
-            count += flip_line(board, disk, pos, LOWER_LEFT);
-            count += flip_line(board, disk, pos, LEFT);
+            count += flip_line(board, color, pos, LEFT);
+            count += flip_line(board, color, pos, RIGHT);
+            count += flip_line(board, color, pos, LOWER_LEFT);
+            count += flip_line(board, color, pos, LOWER);
+            count += flip_line(board, color, pos, LOWER_RIGHT);
             break;
         case C8:
         case C7:
@@ -162,11 +184,11 @@ int Board_flip(Board *board, Disk disk, Pos pos) {
         case E7:
         case F8:
         case F7:
-            count += flip_line(board, disk, pos, LEFT);
-            count += flip_line(board, disk, pos, UPPER_LEFT);
-            count += flip_line(board, disk, pos, UPPER);
-            count += flip_line(board, disk, pos, UPPER_RIGHT);
-            count += flip_line(board, disk, pos, RIGHT);
+            count += flip_line(board, color, pos, UPPER_LEFT);
+            count += flip_line(board, color, pos, UPPER);
+            count += flip_line(board, color, pos, UPPER_RIGHT);
+            count += flip_line(board, color, pos, LEFT);
+            count += flip_line(board, color, pos, RIGHT);
             break;
         case A3:
         case A4:
@@ -176,11 +198,11 @@ int Board_flip(Board *board, Disk disk, Pos pos) {
         case B4:
         case B5:
         case B6:
-            count += flip_line(board, disk, pos, UPPER);
-            count += flip_line(board, disk, pos, UPPER_RIGHT);
-            count += flip_line(board, disk, pos, RIGHT);
-            count += flip_line(board, disk, pos, LOWER_LEFT);
-            count += flip_line(board, disk, pos, LOWER);
+            count += flip_line(board, color, pos, UPPER);
+            count += flip_line(board, color, pos, UPPER_RIGHT);
+            count += flip_line(board, color, pos, RIGHT);
+            count += flip_line(board, color, pos, LOWER);
+            count += flip_line(board, color, pos, LOWER_RIGHT);
             break;
         case H3:
         case H4:
@@ -190,76 +212,77 @@ int Board_flip(Board *board, Disk disk, Pos pos) {
         case G4:
         case G5:
         case G6:
-            count += flip_line(board, disk, pos, LOWER);
-            count += flip_line(board, disk, pos, LOWER_LEFT);
-            count += flip_line(board, disk, pos, LEFT);
-            count += flip_line(board, disk, pos, UPPER_LEFT);
-            count += flip_line(board, disk, pos, UPPER);
+            count += flip_line(board, color, pos, UPPER_LEFT);
+            count += flip_line(board, color, pos, UPPER);
+            count += flip_line(board, color, pos, LEFT);
+            count += flip_line(board, color, pos, LOWER_LEFT);
+            count += flip_line(board, color, pos, LOWER);
             break;
         case A1:
         case A2:
         case B1:
         case B2:
-            count += flip_line(board, disk, pos, RIGHT);
-            count += flip_line(board, disk, pos, LOWER_RIGHT);
-            count += flip_line(board, disk, pos, LOWER);
+            count += flip_line(board, color, pos, RIGHT);
+            count += flip_line(board, color, pos, LOWER);
+            count += flip_line(board, color, pos, LOWER_RIGHT);
             break;
         case A8:
         case A7:
         case B8:
         case B7:
-            count += flip_line(board, disk, pos, UPPER);
-            count += flip_line(board, disk, pos, UPPER_RIGHT);
-            count += flip_line(board, disk, pos, RIGHT);
+            count += flip_line(board, color, pos, UPPER);
+            count += flip_line(board, color, pos, UPPER_RIGHT);
+            count += flip_line(board, color, pos, RIGHT);
             break;
         case H1:
         case H2:
         case G1:
         case G2:
-            count += flip_line(board, disk, pos, LOWER);
-            count += flip_line(board, disk, pos, LOWER_LEFT);
-            count += flip_line(board, disk, pos, LEFT);
+            count += flip_line(board, color, pos, LEFT);
+            count += flip_line(board, color, pos, LOWER_LEFT);
+            count += flip_line(board, color, pos, LOWER);
             break;
         case H8:
         case H7:
         case G8:
         case G7:
-            count += flip_line(board, disk, pos, LEFT);
-            count += flip_line(board, disk, pos, UPPER_LEFT);
-            count += flip_line(board, disk, pos, UPPER);
+            count += flip_line(board, color, pos, UPPER_LEFT);
+            count += flip_line(board, color, pos, UPPER);
+            count += flip_line(board, color, pos, LEFT);
             break;
         default:
-            count += flip_line(board, disk, pos, UPPER);
-            count += flip_line(board, disk, pos, UPPER_RIGHT);
-            count += flip_line(board, disk, pos, RIGHT);
-            count += flip_line(board, disk, pos, LOWER_RIGHT);
-            count += flip_line(board, disk, pos, LOWER);
-            count += flip_line(board, disk, pos, LOWER_LEFT);
-            count += flip_line(board, disk, pos, LEFT);
-            count += flip_line(board, disk, pos, UPPER_LEFT);
+            count += flip_line(board, color, pos, UPPER_LEFT);
+            count += flip_line(board, color, pos, UPPER);
+            count += flip_line(board, color, pos, UPPER_RIGHT);
+            count += flip_line(board, color, pos, LEFT);
+            count += flip_line(board, color, pos, RIGHT);
+            count += flip_line(board, color, pos, LOWER_LEFT);
+            count += flip_line(board, color, pos, LOWER);
+            count += flip_line(board, color, pos, LOWER_RIGHT);
             break;
     }
 
     if (count > 0) {
-        board->disks[pos] = disk;
+        board->disks[pos] = color;
         STACK_PUSH(board, pos);
-        STACK_PUSH(board, OPPONENT(disk));
+        STACK_PUSH(board, OPPONENT(color));
         STACK_PUSH(board, count);
 
-        board->disk_num[disk] += (count + 1);
-        board->disk_num[OPPONENT(disk)] -= count;
+        board->disk_num[color] += (count + 1);
+        board->disk_num[OPPONENT(color)] -= count;
         board->disk_num[EMPTY]--;
     }
 
     return count;
 }
 
-int Board_unflip(Board *board) {
+int Board_unflip(Board *board)
+{
     if (board->sp <= board->stack) {
         return 0;
     }
 
-    int count  = STACK_POP(board);
+    int  count = STACK_POP(board);
     Disk color = STACK_POP(board);
 
     board->disks[STACK_POP(board)] = EMPTY;
@@ -275,102 +298,28 @@ int Board_unflip(Board *board) {
     return count;
 }
 
-static int count_flips_line(const Board *board, Disk disk, Pos pos, Dir dir) {
-    int cur_pos;
-    int count = 0;
-    Disk op = OPPONENT(disk);
-
-    // 相手の石を探索
-    for (cur_pos = pos + dir; board->disks[cur_pos] == op; cur_pos += dir) {
-        count++;
-    }
-    // 終端が自色石でないときカウントしない
-    if (board->disks[cur_pos] != disk) {
-        return 0;
+void Board_init_pattern(Board *board)
+{
+    for (int i = 0; i < NUM_PATTERN; i++) {
+        board->pattern[i] = 0;
     }
 
-    return count;
-}
-
-int Board_count_flips(const Board *board, Disk disk, Pos pos) {
-    int count = 0;
-
-    count += count_flips_line(board, disk, pos, UPPER);
-    count += count_flips_line(board, disk, pos, UPPER_RIGHT);
-    count += count_flips_line(board, disk, pos, UPPER_LEFT);
-    count += count_flips_line(board, disk, pos, RIGHT);
-    count += count_flips_line(board, disk, pos, LEFT);
-    count += count_flips_line(board, disk, pos, LOWER);
-    count += count_flips_line(board, disk, pos, LOWER_RIGHT);
-    count += count_flips_line(board, disk, pos, LOWER_LEFT);
-
-    return count;
-}
-
-bool Board_can_flip(const Board *board, Disk disk, Pos pos) {
-    if (board->disks[pos] != EMPTY) {
-        return false;
-    }
-
-    if (count_flips_line(board, disk, pos, UPPER_LEFT) > 0)  return true;
-    if (count_flips_line(board, disk, pos, UPPER) > 0)       return true;
-    if (count_flips_line(board, disk, pos, UPPER_RIGHT) > 0) return true;
-    if (count_flips_line(board, disk, pos, LEFT) > 0)        return true;
-    if (count_flips_line(board, disk, pos, RIGHT) > 0)       return true;
-    if (count_flips_line(board, disk, pos, LOWER_LEFT) > 0)  return true;
-    if (count_flips_line(board, disk, pos, LOWER) > 0)       return true;
-    if (count_flips_line(board, disk, pos, LOWER_RIGHT) > 0) return true;
-
-    return false;
-}
-
-bool Board_can_play(const Board *board, Disk disk) {
-    for (int y = 0; y < BOARD_SIZE; y++) {
-        for (int x = 0; x < BOARD_SIZE; x++) {
-            if (Board_can_flip(board, disk, XY2POS(x, y))) {
-                return true;
-            }
+    for (int i = 0; i < NUM_DISK; i++) {
+        if (board->disks[i] == BLACK) {
+            put_square_black(board, i);
+        } else if (board->disks[i] == WHITE) {
+            put_square_white(board, i);
         }
     }
-
-    return false;
 }
 
-void Board_copy(const Board *src, Board *dst) {
-    *dst = *src;
-    dst->sp = dst->stack + (src->sp - src->stack);
+int Board_pattern(const Board *board, int id)
+{
+    return board->pattern[id];
 }
 
-void Board_reverse(Board *board) {
-    for (Pos pos = 0; pos < NUM_DISK; pos++) {
-        switch (board->disks[pos]) {
-            case BLACK:
-                board->disks[pos] = WHITE;
-                board->disk_num[BLACK]--;
-                board->disk_num[WHITE]++;
-                break;
-            case WHITE:
-                board->disks[pos] = BLACK;
-                board->disk_num[WHITE]--;
-                board->disk_num[BLACK]++;
-                break;
-            default:
-                break;
-        }
-    }
-
-    for (int *p = board->sp; p > board->stack; ) {
-        p--;
-        int count = *p;     // 返した石数
-        p--;
-        *p = OPPONENT(*p);  // 色を反転
-        p -= (count + 1);   // （石数+着手）分さかのぼる
-    }
-
-    Board_init_pattern(board);
-}
-
-static void add_pattern(Board *board, int id, const Pos *pos_list, int num) {
+static void add_pattern(Board *board, int id, const Pos *pos_list, int num)
+{
     int i, j;
     int n = 1;
 
@@ -384,7 +333,8 @@ static void add_pattern(Board *board, int id, const Pos *pos_list, int num) {
     }
 }
 
-static void init_pattern_diff(Board *board) {
+static void init_pattern_diff(Board *board)
+{
     int i, j;
     Pos pattern_list[][9] = {
         { A4, B4, C4, D4, E4, F4, G4, H4, NONE },
@@ -444,44 +394,8 @@ static void init_pattern_diff(Board *board) {
     }
 }
 
-static void put_square_black(Board *board, Pos pos) {
-    board->disks[pos] = BLACK;
-    board->pattern[board->pattern_id[pos][0]] += board->pattern_diff[pos][0];
-    board->pattern[board->pattern_id[pos][1]] += board->pattern_diff[pos][1];
-    board->pattern[board->pattern_id[pos][2]] += board->pattern_diff[pos][2];
-    board->pattern[board->pattern_id[pos][3]] += board->pattern_diff[pos][3];
-    board->pattern[board->pattern_id[pos][4]] += board->pattern_diff[pos][4];
-    board->pattern[board->pattern_id[pos][5]] += board->pattern_diff[pos][5];
-}
-
-static void put_square_white(Board *board, Pos pos) {
-    board->disks[pos] = WHITE;
-    board->pattern[board->pattern_id[pos][0]] += board->pattern_diff[pos][0] + board->pattern_diff[pos][0];
-    board->pattern[board->pattern_id[pos][1]] += board->pattern_diff[pos][1] + board->pattern_diff[pos][1];
-    board->pattern[board->pattern_id[pos][2]] += board->pattern_diff[pos][2] + board->pattern_diff[pos][2];
-    board->pattern[board->pattern_id[pos][3]] += board->pattern_diff[pos][3] + board->pattern_diff[pos][3];
-    board->pattern[board->pattern_id[pos][4]] += board->pattern_diff[pos][4] + board->pattern_diff[pos][4];
-    board->pattern[board->pattern_id[pos][5]] += board->pattern_diff[pos][5] + board->pattern_diff[pos][5];
-}
-
-void Board_init_pattern(Board *board) {
-    for (int i = 0; i < NUM_PATTERN; i++) {
-        board->pattern[i] = 0;
-    }
-    for (int i = 0; i < NUM_DISK; i++) {
-        if (board->disks[i] == BLACK) {
-            put_square_black(board, i);
-        } else if (board->disks[i] == WHITE) {
-            put_square_white(board, i);
-        }
-    }
-}
-
-int Board_pattern(const Board *board, int id) {
-    return board->pattern[id];
-}
-
-static void flip_square_black(Board *board, Pos pos) {
+static void flip_square_black(Board *board, Pos pos)
+{
     board->disks[pos] = BLACK;
     board->pattern[board->pattern_id[pos][0]] -= board->pattern_diff[pos][0];
     board->pattern[board->pattern_id[pos][1]] -= board->pattern_diff[pos][1];
@@ -491,7 +405,8 @@ static void flip_square_black(Board *board, Pos pos) {
     board->pattern[board->pattern_id[pos][5]] -= board->pattern_diff[pos][5];
 }
 
-static void flip_square_white(Board *board, Pos pos) {
+static void flip_square_white(Board *board, Pos pos)
+{
     board->disks[pos] = WHITE;
     board->pattern[board->pattern_id[pos][0]] += board->pattern_diff[pos][0];
     board->pattern[board->pattern_id[pos][1]] += board->pattern_diff[pos][1];
@@ -501,7 +416,30 @@ static void flip_square_white(Board *board, Pos pos) {
     board->pattern[board->pattern_id[pos][5]] += board->pattern_diff[pos][5];
 }
 
-static void remove_square_black(Board *board, Pos pos) {
+static void put_square_black(Board *board, Pos pos)
+{
+    board->disks[pos] = BLACK;
+    board->pattern[board->pattern_id[pos][0]] += board->pattern_diff[pos][0];
+    board->pattern[board->pattern_id[pos][1]] += board->pattern_diff[pos][1];
+    board->pattern[board->pattern_id[pos][2]] += board->pattern_diff[pos][2];
+    board->pattern[board->pattern_id[pos][3]] += board->pattern_diff[pos][3];
+    board->pattern[board->pattern_id[pos][4]] += board->pattern_diff[pos][4];
+    board->pattern[board->pattern_id[pos][5]] += board->pattern_diff[pos][5];
+}
+
+static void put_square_white(Board *board, Pos pos)
+{
+    board->disks[pos] = WHITE;
+    board->pattern[board->pattern_id[pos][0]] += (board->pattern_diff[pos][0] + board->pattern_diff[pos][0]);
+    board->pattern[board->pattern_id[pos][1]] += (board->pattern_diff[pos][1] + board->pattern_diff[pos][1]);
+    board->pattern[board->pattern_id[pos][2]] += (board->pattern_diff[pos][2] + board->pattern_diff[pos][2]);
+    board->pattern[board->pattern_id[pos][3]] += (board->pattern_diff[pos][3] + board->pattern_diff[pos][3]);
+    board->pattern[board->pattern_id[pos][4]] += (board->pattern_diff[pos][4] + board->pattern_diff[pos][4]);
+    board->pattern[board->pattern_id[pos][5]] += (board->pattern_diff[pos][5] + board->pattern_diff[pos][5]);
+}
+
+static void remove_square_black(Board *board, Pos pos)
+{
     board->disks[pos] = EMPTY;
     board->pattern[board->pattern_id[pos][0]] -= board->pattern_diff[pos][0];
     board->pattern[board->pattern_id[pos][1]] -= board->pattern_diff[pos][1];
@@ -511,19 +449,20 @@ static void remove_square_black(Board *board, Pos pos) {
     board->pattern[board->pattern_id[pos][5]] -= board->pattern_diff[pos][5];
 }
 
-static void remove_square_white(Board *board, Pos pos) {
+static void remove_square_white(Board *board, Pos pos)
+{
     board->disks[pos] = EMPTY;
-    board->pattern[board->pattern_id[pos][0]] -= board->pattern_diff[pos][0] + board->pattern_diff[pos][0];
-    board->pattern[board->pattern_id[pos][1]] -= board->pattern_diff[pos][1] + board->pattern_diff[pos][1];
-    board->pattern[board->pattern_id[pos][2]] -= board->pattern_diff[pos][2] + board->pattern_diff[pos][2];
-    board->pattern[board->pattern_id[pos][3]] -= board->pattern_diff[pos][3] + board->pattern_diff[pos][3];
-    board->pattern[board->pattern_id[pos][4]] -= board->pattern_diff[pos][4] + board->pattern_diff[pos][4];
-    board->pattern[board->pattern_id[pos][5]] -= board->pattern_diff[pos][5] + board->pattern_diff[pos][5];
+    board->pattern[board->pattern_id[pos][0]] -= (board->pattern_diff[pos][0] + board->pattern_diff[pos][0]);
+    board->pattern[board->pattern_id[pos][1]] -= (board->pattern_diff[pos][1] + board->pattern_diff[pos][1]);
+    board->pattern[board->pattern_id[pos][2]] -= (board->pattern_diff[pos][2] + board->pattern_diff[pos][2]);
+    board->pattern[board->pattern_id[pos][3]] -= (board->pattern_diff[pos][3] + board->pattern_diff[pos][3]);
+    board->pattern[board->pattern_id[pos][4]] -= (board->pattern_diff[pos][4] + board->pattern_diff[pos][4]);
+    board->pattern[board->pattern_id[pos][5]] -= (board->pattern_diff[pos][5] + board->pattern_diff[pos][5]);
 }
 
-static int flip_line_pattern(Board *board, Disk disk, Pos pos, Dir dir) {
+static int flip_line_pattern(Board *board, Disk disk, Pos pos, Dir dir)
+{
     Pos cur_pos;
-    int count = 0;
     Disk op = OPPONENT(disk);
     void (*func_flip)(Board *, Pos);
 
@@ -535,6 +474,7 @@ static int flip_line_pattern(Board *board, Disk disk, Pos pos, Dir dir) {
 
     for (cur_pos = (pos + dir); board->disks[cur_pos] == op; cur_pos += dir);
 
+    int count = 0;
     if (board->disks[cur_pos] == disk) {
         for (cur_pos -= dir; board->disks[cur_pos] == op; cur_pos -= dir) {
             func_flip(board, pos);
@@ -546,12 +486,13 @@ static int flip_line_pattern(Board *board, Disk disk, Pos pos, Dir dir) {
     return count;
 }
 
-int Board_flip_pattern(Board *board, Disk color, Pos pos) {
-    int count = 0;
-    
+int Board_flip_pattern(Board *board, Disk color, Pos pos)
+{
     if (board->disks[pos] != EMPTY) {
         return 0;
     }
+
+    int count = 0;
 
     switch (pos) {
         case C1:
@@ -562,11 +503,11 @@ int Board_flip_pattern(Board *board, Disk color, Pos pos) {
         case E2:
         case F1:
         case F2:
-            count += flip_line_pattern(board, color, pos, RIGHT);
-            count += flip_line_pattern(board, color, pos, LOWER_RIGHT);
-            count += flip_line_pattern(board, color, pos, LOWER);
-            count += flip_line_pattern(board, color, pos, LOWER_LEFT);
             count += flip_line_pattern(board, color, pos, LEFT);
+            count += flip_line_pattern(board, color, pos, RIGHT);
+            count += flip_line_pattern(board, color, pos, LOWER_LEFT);
+            count += flip_line_pattern(board, color, pos, LOWER);
+            count += flip_line_pattern(board, color, pos, LOWER_RIGHT);
             break;
         case C8:
         case C7:
@@ -576,10 +517,10 @@ int Board_flip_pattern(Board *board, Disk color, Pos pos) {
         case E7:
         case F8:
         case F7:
-            count += flip_line_pattern(board, color, pos, LEFT);
             count += flip_line_pattern(board, color, pos, UPPER_LEFT);
             count += flip_line_pattern(board, color, pos, UPPER);
             count += flip_line_pattern(board, color, pos, UPPER_RIGHT);
+            count += flip_line_pattern(board, color, pos, LEFT);
             count += flip_line_pattern(board, color, pos, RIGHT);
             break;
         case A3:
@@ -593,8 +534,8 @@ int Board_flip_pattern(Board *board, Disk color, Pos pos) {
             count += flip_line_pattern(board, color, pos, UPPER);
             count += flip_line_pattern(board, color, pos, UPPER_RIGHT);
             count += flip_line_pattern(board, color, pos, RIGHT);
-            count += flip_line_pattern(board, color, pos, LOWER_LEFT);
             count += flip_line_pattern(board, color, pos, LOWER);
+            count += flip_line_pattern(board, color, pos, LOWER_RIGHT);
             break;
         case H3:
         case H4:
@@ -604,19 +545,19 @@ int Board_flip_pattern(Board *board, Disk color, Pos pos) {
         case G4:
         case G5:
         case G6:
-            count += flip_line_pattern(board, color, pos, LOWER);
-            count += flip_line_pattern(board, color, pos, LOWER_LEFT);
-            count += flip_line_pattern(board, color, pos, LEFT);
             count += flip_line_pattern(board, color, pos, UPPER_LEFT);
             count += flip_line_pattern(board, color, pos, UPPER);
+            count += flip_line_pattern(board, color, pos, LEFT);
+            count += flip_line_pattern(board, color, pos, LOWER_LEFT);
+            count += flip_line_pattern(board, color, pos, LOWER);
             break;
         case A1:
         case A2:
         case B1:
         case B2:
             count += flip_line_pattern(board, color, pos, RIGHT);
-            count += flip_line_pattern(board, color, pos, LOWER_RIGHT);
             count += flip_line_pattern(board, color, pos, LOWER);
+            count += flip_line_pattern(board, color, pos, LOWER_RIGHT);
             break;
         case A8:
         case A7:
@@ -630,32 +571,31 @@ int Board_flip_pattern(Board *board, Disk color, Pos pos) {
         case H2:
         case G1:
         case G2:
-            count += flip_line_pattern(board, color, pos, LOWER);
-            count += flip_line_pattern(board, color, pos, LOWER_LEFT);
             count += flip_line_pattern(board, color, pos, LEFT);
+            count += flip_line_pattern(board, color, pos, LOWER_LEFT);
+            count += flip_line_pattern(board, color, pos, LOWER);
             break;
         case H8:
         case H7:
         case G8:
         case G7:
-            count += flip_line_pattern(board, color, pos, LEFT);
             count += flip_line_pattern(board, color, pos, UPPER_LEFT);
             count += flip_line_pattern(board, color, pos, UPPER);
+            count += flip_line_pattern(board, color, pos, LEFT);
             break;
         default:
+            count += flip_line_pattern(board, color, pos, UPPER_LEFT);
             count += flip_line_pattern(board, color, pos, UPPER);
             count += flip_line_pattern(board, color, pos, UPPER_RIGHT);
-            count += flip_line_pattern(board, color, pos, RIGHT);
-            count += flip_line_pattern(board, color, pos, LOWER_RIGHT);
-            count += flip_line_pattern(board, color, pos, LOWER);
-            count += flip_line_pattern(board, color, pos, LOWER_LEFT);
             count += flip_line_pattern(board, color, pos, LEFT);
-            count += flip_line_pattern(board, color, pos, UPPER_LEFT);
+            count += flip_line_pattern(board, color, pos, RIGHT);
+            count += flip_line_pattern(board, color, pos, LOWER_LEFT);
+            count += flip_line_pattern(board, color, pos, LOWER);
+            count += flip_line_pattern(board, color, pos, LOWER_RIGHT);
             break;
     }
 
     if (count > 0) {
-        board->disks[pos] = color;
         if (color == BLACK) {
             put_square_black(board, pos);
         } else {
@@ -673,7 +613,8 @@ int Board_flip_pattern(Board *board, Disk color, Pos pos) {
     return count;
 }
 
-int Board_unflip_pattern(Board *board) {
+int Board_unflip_pattern(Board *board)
+{
     if (board->sp <= board->stack) {
         return 0;
     }
@@ -698,4 +639,105 @@ int Board_unflip_pattern(Board *board) {
     board->disk_num[EMPTY]++;
 
     return count;
+}
+
+static int count_flips_line(const Board *board, Disk disk, Pos pos, Dir dir)
+{
+    int cur_pos;
+    Disk op = OPPONENT(disk);
+
+    // 相手の石を探索
+    int count = 0;
+    for (cur_pos = pos + dir; board->disks[cur_pos] == op; cur_pos += dir) {
+        count++;
+    }
+    // 終端が自色石でないときカウントしない
+    if (board->disks[cur_pos] != disk) {
+        return 0;
+    }
+
+    return count;
+}
+
+int Board_count_flips(const Board *board, Disk disk, Pos pos)
+{
+    int count = 0;
+
+    count += count_flips_line(board, disk, pos, UPPER);
+    count += count_flips_line(board, disk, pos, UPPER_RIGHT);
+    count += count_flips_line(board, disk, pos, UPPER_LEFT);
+    count += count_flips_line(board, disk, pos, RIGHT);
+    count += count_flips_line(board, disk, pos, LEFT);
+    count += count_flips_line(board, disk, pos, LOWER);
+    count += count_flips_line(board, disk, pos, LOWER_RIGHT);
+    count += count_flips_line(board, disk, pos, LOWER_LEFT);
+
+    return count;
+}
+
+bool Board_can_flip(const Board *board, Disk disk, Pos pos)
+{
+    if (board->disks[pos] != EMPTY) {
+        return false;
+    }
+
+    if (count_flips_line(board, disk, pos, UPPER_LEFT) > 0)  return true;
+    if (count_flips_line(board, disk, pos, UPPER) > 0)       return true;
+    if (count_flips_line(board, disk, pos, UPPER_RIGHT) > 0) return true;
+    if (count_flips_line(board, disk, pos, LEFT) > 0)        return true;
+    if (count_flips_line(board, disk, pos, RIGHT) > 0)       return true;
+    if (count_flips_line(board, disk, pos, LOWER_LEFT) > 0)  return true;
+    if (count_flips_line(board, disk, pos, LOWER) > 0)       return true;
+    if (count_flips_line(board, disk, pos, LOWER_RIGHT) > 0) return true;
+
+    return false;
+}
+
+void Board_copy(const Board *src, Board *dst)
+{
+    *dst = *src;
+    dst->sp = dst->stack + (src->sp - src->stack);
+}
+
+void Board_reverse(Board *board)
+{
+    for (Pos pos = 0; pos < NUM_DISK; pos++) {
+        switch (board->disks[pos]) {
+            case BLACK:
+                board->disks[pos] = WHITE;
+                board->disk_num[BLACK]--;
+                board->disk_num[WHITE]++;
+                break;
+            case WHITE:
+                board->disks[pos] = BLACK;
+                board->disk_num[WHITE]--;
+                board->disk_num[BLACK]++;
+                break;
+            default:
+                break;
+        }
+    }
+
+    for (int *p = board->sp; p > board->stack; ) {
+        p--;
+        int count = *p;     // 返した石数
+        p--;
+        *p = OPPONENT(*p);  // 色を反転
+        p -= (count + 1);   // （石数+着手）分さかのぼる
+    }
+
+    Board_init_pattern(board);
+}
+
+bool Board_can_play(const Board *board, Disk disk)
+{
+    for (int y = 0; y < BOARD_SIZE; y++) {
+        for (int x = 0; x < BOARD_SIZE; x++) {
+            if (Board_can_flip(board, disk, XY2POS(x, y))) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }

@@ -23,108 +23,30 @@ const char option_str[] = "options\n \
 
 #define EVAL_FILE "eval.dat"
 
-/// 
-/// @fn     show_prompt
-/// @brief  プロンプトを表示する
-/// @param[in]  currnent   現在の手番
-///
-static void show_prompt(Disk turn) {
-    if (turn == BLACK) {
-        printf("Black(@) >> ");
-    } else {
-        printf("White(O) >> ");
-    }
-}
 
-static void print_board(const Board *board, const Disk turn) {
-    printf("    A B C D E F G H \n");
-    printf("  +-----------------+\n");
-    for (int y = 0; y < BOARD_SIZE; y++) {
-        printf("%d | ", (y + 1));
-        for (int x = 0; x < BOARD_SIZE; x++) {
-            Pos pos = XY2POS(x, y);
-            switch (Board_disk(board, pos)) {
-                case WHITE:
-                    printf("O ");
-                    break;
-                case BLACK:
-                    printf("@ ");
-                    break;
-                default:
-                    if (Board_can_flip(board, turn, pos)) {
-                        printf("* ");
-                    } else {
-                        printf("- ");
-                    }
-                    break;
-            }
-        }
-        printf("|\n");
-    }
-    printf("  +-----------------+\n");
-    printf("@:%2d O:%2d\n", Board_count_disks(board, BLACK), Board_count_disks(board, WHITE));
-}
+static int get_rand(int max);
+static void move_random(Board *board, const Disk color);
+static void learn(Board *board, Evaluator *evaluator, Com *com, const int iteration);
 
-/// 
-/// @fn     get_input
-/// @brief  プレイヤー入力を取得する
-/// @param[in]  board   盤面
-/// @param[in]  turn 現在の手番
-/// @return 入力に対応した座標インデックス（'A1' - 'H8'）
-///
-static Pos get_input(Board *board, Disk turn) {
-    Pos move;
+static void show_prompt(const Disk color);
+static void print_board(const Board *board, const Disk color);
+static Pos get_input(Board *board, Disk color);
+static void play(Board *board, Com *com, Disk player);
+static void judge(const Board *board);
 
-    while (true) {
-        char input[3];
-        fgets(input, sizeof(input), stdin);
 
-        // 標準出力に残る文字を読み飛ばす
-        if(!feof(stdin)) {
-            while (getchar() != '\n');
-        }
-
-        move = CHAR2POS(input[0], input[1]);
-
-        // 着手判定
-        if (Board_can_flip(board, turn, move)) {
-            break;
-        } else {
-            print_board(board, turn);
-            show_prompt(turn);
-        }
-    }
-
-    return move;
-}
-
-/// 
-/// @fn     judge
-/// @brief  勝敗を判定する
-/// @param[in]  board   盤面
-///
-static void judge(Board *board) {
-    int n_black = Board_count_disks(board, BLACK);
-    int n_white = Board_count_disks(board, WHITE);
-
-    if (n_black > n_white) {
-        printf("*** BLACK wins ***\n");
-    } else if (n_black < n_white) {
-        printf("*** WHITE wins ***\n");
-    } else {
-        printf("*** draw ***\n");
-    }
-}
-
-static int get_rand(int max) {
+static int get_rand(int max)
+{
     return (int)((double)max * rand() / (RAND_MAX + 1.0));
 }
 
-static void move_random(Board *board, Disk color) {
-    while(!Board_flip(board, color, XY2POS(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
+static void move_random(Board *board, const Disk color)
+{
+    while (!Board_flip(board, color, XY2POS(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
 }
 
-static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
+static void learn(Board *board, Evaluator *evaluator, Com *com, const int iteration)
+{
     int  history[BOARD_SIZE * BOARD_SIZE];
 
     Com_set_level(com, 4, 12, 12);
@@ -132,12 +54,12 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
     printf("Start learning\n");
 
     for (int i = 0; i < iteration; i++) {
+        Board_init(board);
+
         Disk color = BLACK;
         Pos move;
         int turn = 0;
         int value;
-
-        Board_init(board);
 
         for (int j = 0; j < 8; j++) {
             if (Board_can_play(board, color)) {
@@ -199,7 +121,105 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, int iteration) {
     printf("Finished\n");
 }
 
-static void play(Board *board, Com *com, Disk player) {
+/// 
+/// @fn     show_prompt
+/// @brief  プロンプトを表示する
+/// @param[in]  color   現在の手番
+///
+static void show_prompt(const Disk color)
+{
+    if (color== BLACK) {
+        printf("Black(@) >> ");
+    } else {
+        printf("White(O) >> ");
+    }
+}
+
+static void print_board(const Board *board, const Disk color)
+{
+    printf("    A B C D E F G H \n");
+    printf("  +-----------------+\n");
+    for (int y = 0; y < BOARD_SIZE; y++) {
+        printf("%d | ", (y + 1));
+        for (int x = 0; x < BOARD_SIZE; x++) {
+            Pos pos = XY2POS(x, y);
+            switch (Board_disk(board, pos)) {
+                case WHITE:
+                    printf("O ");
+                    break;
+                case BLACK:
+                    printf("@ ");
+                    break;
+                default:
+                    if (Board_can_flip(board, color, pos)) {
+                        printf("* ");
+                    } else {
+                        printf("- ");
+                    }
+                    break;
+            }
+        }
+        printf("|\n");
+    }
+    printf("  +-----------------+\n");
+    printf("@:%2d O:%2d\n", Board_count_disks(board, BLACK), Board_count_disks(board, WHITE));
+}
+
+/// 
+/// @fn     get_input
+/// @brief  プレイヤー入力を取得する
+/// @param[in]  board   盤面
+/// @param[in]  color   現在の手番
+/// @return 入力に対応した座標インデックス（'A1' - 'H8'）
+///
+static Pos get_input(Board *board, Disk color)
+{
+    Pos move;
+
+    while (true) {
+        char input[3];
+        fgets(input, sizeof(input), stdin);
+
+        // 標準出力に残る文字を読み飛ばす
+        if(!feof(stdin)) {
+            while (getchar() != '\n');
+        }
+
+        move = CHAR2POS(input[0], input[1]);
+
+        // 着手判定
+        if (Board_can_flip(board, color, move)) {
+            break;
+        } else {
+            print_board(board, color);
+            show_prompt(color);
+        }
+    }
+
+    return move;
+}
+
+/// 
+/// @fn     judge
+/// @brief  勝敗を判定する
+/// @param[in]  board   盤面
+///
+static void judge(const Board *board)
+{
+    int n_black = Board_count_disks(board, BLACK);
+    int n_white = Board_count_disks(board, WHITE);
+
+    if (n_black > n_white) {
+        printf("*** BLACK wins ***\n");
+    } else if (n_black < n_white) {
+        printf("*** WHITE wins ***\n");
+    } else {
+        printf("*** draw ***\n");
+    }
+}
+
+static void play(Board *board, Com *com, Disk player)
+{
     Disk turn = BLACK;
 
     int val;
@@ -233,7 +253,8 @@ static void play(Board *board, Com *com, Disk player) {
     judge(board);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     Disk player   = BLACK;
     bool learning = false;
     int  iteration;
@@ -279,9 +300,11 @@ int main(int argc, char *argv[]) {
         play(board, com, player);
     }
 
-    Board_delete(board);
-
     Com_delete(com);
+
+    Evaluator_delete(evaluator);
+
+    Board_delete(board);
 
     return 0;
 }

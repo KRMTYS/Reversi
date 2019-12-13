@@ -15,10 +15,10 @@ typedef struct Com_ Com;
 ///
 /// @fn     Com_create
 /// @brief  COMを生成する
-/// @param[in]  evaluator   評価器
+/// @param[in]  eval    評価器
 /// @return COM
 ///
-Com *Com_create(Evaluator* evaluator);
+Com *Com_create(Evaluator* eval);
 
 ///
 /// @fn     Com_delete
@@ -26,13 +26,6 @@ Com *Com_create(Evaluator* evaluator);
 /// @param[in]  com     COM
 ///
 void Com_delete(Com *com);
-
-///
-/// @fn     Com_init
-/// @brief  COMを初期化する
-/// @param[in] com  COM
-///
-void Com_init(Com *com);
 
 ///
 /// @fn     Com_set_level
@@ -49,11 +42,11 @@ void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld);
 /// @brief  次手を取得する
 /// @param[in]  com     COM
 /// @param[in]  board   盤面
-/// @param[in]  turn    手番
+/// @param[in]  color   手番
 /// @param[out] value   評価値
 /// @return COMの次手
 ///
-Pos Com_get_nextmove(Com *com, Board *board, Disk turn, int *value);
+Pos Com_get_nextmove(Com *com, Board *board, Disk color, int *value);
 
 ///
 /// @fn     Com_count_nodes

@@ -7,6 +7,8 @@
 #ifndef EVALUATOR_H_
 #define EVALUATOR_H_
 
+#include <stdbool.h>
+
 #include "board.h"
 
 ///
@@ -14,18 +16,6 @@
 /// @brief  一石の評価値
 ///
 #define DISK_VALUE 1000
-
-///
-/// @def    MAX_PATTERN_VALUE
-/// @brief  評価値の上限値
-///
-#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
-
-///
-/// @def    MAX_PATTERN_VALUE
-/// @brief  評価値の上限値
-///
-//#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
 
 ///
 /// @typedef    Evaluator
@@ -41,13 +31,6 @@ typedef struct Evaluator_ Evaluator;
 Evaluator *Evaluator_create(void);
 
 ///
-/// @fn     Evaluator_init
-/// @brief  評価器を初期化する
-/// @param[in]  eval    評価器
-///
-void Evaluator_init(Evaluator *eval);
-
-///
 /// @fn     Evaluator_delete
 /// @brief  評価器を破棄する
 /// @param[in]  eval    評価器
@@ -60,7 +43,7 @@ void Evaluator_delete(Evaluator *eval);
 /// @param[in]  eval    評価器
 /// @param[in]  file    ファイル名
 ///
-void Evaluator_load(Evaluator *eval, const char *file);
+bool Evaluator_load(Evaluator *eval, const char *file);
 
 ///
 /// @fn     Evaluator_save
@@ -68,7 +51,7 @@ void Evaluator_load(Evaluator *eval, const char *file);
 /// @param[in]  eval    評価器
 /// @param[in]  file    ファイル名
 ///
-void Evaluator_save(Evaluator *eval, const char *file);
+bool Evaluator_save(Evaluator *eval, const char *file);
 
 ///
 /// @fn     Evaluator_evaluate

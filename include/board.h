@@ -17,12 +17,6 @@
 #define BOARD_SIZE 8
 
 ///
-/// @def    NUM_DISK
-/// @brief  番兵を含む盤面長
-///
-#define NUM_DISK 91
-
-///
 /// @enum   Disk
 /// @brief  盤面上の石・マスの状態
 ///
@@ -37,7 +31,7 @@ typedef enum {
 /// @def    OPPONENT
 /// @brief  逆の色を取得する
 ///
-#define OPPONENT(disk)     (1 ^ (disk))
+#define OPPONENT(color)  (1 ^ (color))
 
 ///
 /// @enum   Pos
@@ -164,20 +158,20 @@ Disk Board_disk(const Board *board, Pos pos);
 /// @fn     Board_count_disks
 /// @brief  指定した色の石数を数える
 /// @param[in]  board   [in]    盤面
-/// @param[in]  disk    [in]    石
+/// @param[in]  color   [in]    石
 /// @return 指定した石の数
 ///
-int Board_count_disks(const Board *board, Disk disk);
+int Board_count_disks(const Board *board, Disk color);
 
 ///
 /// @fn     Board_flip
 /// @brief  指定した座標に着手する
 /// @param[in,out]  board   盤面
-/// @param[in]      disk    手番
+/// @param[in]      color   手番
 /// @param[in]      pos     座標
 /// @return 返した石数
 ///
-int Board_flip(Board *board, Disk disk, Pos pos);
+int Board_flip(Board *board, Disk color, Pos pos);
 
 ///
 /// @fn     Board_unflip
@@ -188,35 +182,33 @@ int Board_flip(Board *board, Disk disk, Pos pos);
 int Board_unflip(Board *board);
 
 ///
-/// @fn     Board_count_flips
-/// @brief  返せる石数を数える
-/// @param[in]  board   盤面
-/// @param[in]  disk    手番
-/// @param[in]  pos     座標
-/// @return 指定した座標に石を置いたとき返せる石数
-///
-int Board_count_flips(const Board *board, Disk disk, Pos pos);
-
-///
 /// @fn     Board_can_flip
 /// @brief  指定した座標に返せる石があるか（有効手であるか）確認する
 /// @param[in]  board   盤面
-/// @param[in]  disk    手番
+/// @param[in]  color   手番
 /// @param[in]  pos     座標
 /// @retval true    返せる石がある（有効手である）
 /// @retval false   返せる石がない
 ///
-bool Board_can_flip(const Board *board, Disk disk, Pos pos);
+bool Board_can_flip(const Board *board, Disk color, Pos pos);
 
 ///
-/// @fn     Board_can_play
-/// @brief  返せる石があるか（有効手があるか）確認する
+/// @fn     Board_count_flips
+/// @brief  返せる石数を数える
 /// @param[in]  board   盤面
-/// @param[in]  disk    手番
-/// @retval true    返せる石がある（有効手がある）
-/// @retval false   返せる石がない（有効手がない）
+/// @param[in]  color   手番
+/// @param[in]  pos     座標
+/// @return 指定した座標に石を置いたとき返せる石数
 ///
-bool Board_can_play(const Board *board, Disk disk);
+int Board_count_flips(const Board *board, Disk color, Pos pos);
+
+void Board_init_pattern(Board *board);
+
+int Board_pattern(const Board *board, int id);
+
+int Board_flip_pattern(Board *board, Disk color, Pos pos);
+
+int Board_unflip_pattern(Board *board);
 
 ///
 /// @fn     Board_copy
@@ -233,12 +225,14 @@ void Board_copy(const Board *src, Board *dst);
 ///
 void Board_reverse(Board *board);
 
-void Board_init_pattern(Board *board);
-
-int Board_pattern(const Board *board, int id);
-
-int Board_flip_pattern(Board *board, Disk color, Pos pos);
-
-int Board_unflip_pattern(Board *board);
+///
+/// @fn     Board_can_play
+/// @brief  返せる石があるか（有効手があるか）確認する
+/// @param[in]  board   盤面
+/// @param[in]  color   手番
+/// @retval true    返せる石がある（有効手がある）
+/// @retval false   返せる石がない（有効手がない）
+///
+bool Board_can_play(const Board *board, Disk color);
 
 #endif // BOARD_H_

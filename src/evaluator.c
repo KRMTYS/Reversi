@@ -17,6 +17,16 @@
 ///
 #define UPDATE_RATIO 0.005
 
+///
+/// @def    MAX_PATTERN_VALUE
+/// @brief  評価値の上限値
+///
+#define MAX_PATTERN_VALUE (DISK_VALUE * 20)
+
+///
+/// @def    MIN_FREQUENCY
+/// @brief  評価値の更新頻度
+///
 #define MIN_FREQUNECY 10
 
 ///
@@ -26,9 +36,9 @@
 ///         (http://www.es-cube.net/es-cube/reversi/sample/html/3_2.html)
 ///
 typedef enum {
-    PATTERN_HV2,        ///< hor./vert.2: 水平/垂直ラインパターン
+    PATTERN_HV4,        ///< hor./vert.4: 水平/垂直ラインパターン
     PATTERN_HV3,        ///< hor./vert.3
-    PATTERN_HV4,        ///< hor./vert.4
+    PATTERN_HV2,        ///< hor./vert.2
     PATTERN_DIAG8,      ///< diag8: 対角線パターン
     PATTERN_DIAG7,      ///< diag7
     PATTERN_DIAG6,      ///< diag6
@@ -62,9 +72,9 @@ typedef enum {
 
 // 各評価パターンの状態数
 static const int pattern_size[] = {
-    POW3_8, // hor./vert.2: A4-H4
+    POW3_8, // hor./vert.4: A4-H4
     POW3_8, // hor./vert.3: A3-H3
-    POW3_8, // hor./vert.4: A2-H2
+    POW3_8, // hor./vert.2: A2-H2
     POW3_8, // diag8:       A1-H8
     POW3_7, // diag7:       A2-G8
     POW3_6, // diag6:       A3-F8
@@ -72,8 +82,8 @@ static const int pattern_size[] = {
     POW3_4, // diag4:       A5-D8
     POW3_8, // edge:        A1-G1 + B2
     POW3_8, // corner:      A1-C1 + A2-C2 + A3-B3
-    2, // parity
-    0  // dummy
+    2,      // parity
+    0       // dummy
 };
 
 ///
@@ -81,36 +91,45 @@ static const int pattern_size[] = {
 /// @brief  評価器
 ///
 struct Evaluator_ {
-    int *values[PATTERN_NUM];   ///< 各パターンに対する評価値
-    int *pattern_num[PATTERN_NUM];  ///< パターンの出現回数
+    int    *values[PATTERN_NUM];   ///< 各パターンに対する評価値
+    int    *pattern_num[PATTERN_NUM];  ///< パターンの出現回数
     double *pattern_sum[PATTERN_NUM];   ///< 評価値差分の合計
-    int mirror_line[POW3_8];    ///< 対称な列パターンを調べるための変数
-    int mirror_corner[POW3_8];  ///< 対称なコーナーパターンを調べるための変数
+    int    mirror_line[POW3_8];    ///< 対称な列パターンを調べるための変数
+    int    mirror_corner[POW3_8];  ///< 対称なコーナーパターンを調べるための変数
 };
 
-Evaluator *Evaluator_create(void) {
-    Evaluator *eval = malloc(sizeof(Evaluator));
+static bool initialize(Evaluator *eval);
+static void finalize(Evaluator *eval);
 
-    Evaluator_init(eval);
+static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double diff);
 
-    return eval;
-}
+static void update_pattern(Evaluator *eval, int pattern, int id);
 
-void Evaluator_init(Evaluator *eval) {
+static bool initialize(Evaluator *eval)
+{
     memset(eval, 0, sizeof(Evaluator));
+
+    for (int i = 0; i < PATTERN_NUM; i++) {
+        eval->values[i] = calloc(pattern_size[i], sizeof(int));
+        if (!eval->values[i]) {
+            return false;
+        }
+
+        eval->pattern_num[i] = calloc(pattern_size[i], sizeof(int));
+        if (!eval->pattern_num[i]) {
+            return false;
+        }
+
+        eval->pattern_sum[i] = calloc(pattern_size[i], sizeof(double));
+        if (!eval->pattern_sum[i]) {
+            return false;
+        }
+    }
 
     int mirror_in, mirror_out, coeff;
     int mirror_corner_coeff[] = {
         POW3_2, POW3_5, POW3_0, POW3_3, POW3_6, POW3_1, POW3_4, POW3_7
     };
-
-    for (int i = 0; i < PATTERN_NUM; i++) {
-        eval->values[i] = calloc(pattern_size[i], sizeof(int));
-
-        eval->pattern_num[i] = calloc(pattern_size[i], sizeof(int));
-
-        eval->pattern_sum[i] = calloc(pattern_size[i], sizeof(double));
-    }
 
     for (int i = 0; i < POW3_8; i++) {
         mirror_in  = i;
@@ -141,61 +160,94 @@ void Evaluator_init(Evaluator *eval) {
             eval->mirror_corner[i] = i;
         }
     }
+
+    return true;
 }
 
-void Evaluator_delete(Evaluator *eval) {
-    if (eval == NULL) {
+static void finalize(Evaluator *eval)
+{
+    for (int i = 0; i < PATTERN_NUM; i++) {
+        if (eval->pattern_sum[i]) {
+            free(eval->pattern_sum[i]);
+        }
+
+        if (eval->pattern_num[i]) {
+            free(eval->pattern_num[i]);
+        }
+
+        if (eval->values[i]) {
+            free(eval->values[i]);
+        }
+    }
+}
+
+Evaluator *Evaluator_create(void)
+{
+    Evaluator *eval = malloc(sizeof(Evaluator));
+
+    if (eval) {
+        if (!initialize(eval)) {
+            finalize(eval);
+            eval = NULL;
+        }
+    }
+
+    return eval;
+}
+
+
+void Evaluator_delete(Evaluator *eval)
+{
+    if (!eval) {
         return;
     }
 
-    for (int i = 0; i < PATTERN_NUM; i++) {
-        free(eval->values[i]);
-        eval->values[i] = NULL;
-
-        free(eval->pattern_num[i]);
-        eval->pattern_num[i] = NULL;
-
-        free(eval->pattern_sum[i]);
-        eval->pattern_sum[i] = NULL;
-    }
+    finalize(eval);
 
     free(eval);
     eval = NULL;
 }
 
-void Evaluator_load(Evaluator *eval, const char *file) {
+bool Evaluator_load(Evaluator *eval, const char *file)
+{
     FILE *fp = fopen(file, "rb");
     if (!fp) {
-        return;
+        return false;
     }
 
     for (int i = 0; i < PATTERN_NUM; i++) {
         if (fread(eval->values[i], sizeof(int), pattern_size[i], fp) < (size_t)pattern_size[i]) {
             fclose(fp);
-            return;
+            return false;
         }
     }
 
     fclose(fp);
+
+    return true;
 }
 
-void Evaluator_save(Evaluator *eval, const char *file) {
+bool Evaluator_save(Evaluator *eval, const char *file)
+{
     FILE *fp = fopen(file, "wb");
     if (!fp) {
-        return;
+        return false;
     }
 
     for (int i = 0; i < PATTERN_NUM; i++) {
         if (fwrite(eval->values[i], sizeof(int), pattern_size[i], fp) < (size_t)pattern_size[i]) {
             fclose(fp);
-            return;
+            return true;
         }
     }
 
     fclose(fp);
+
+    return true;
 }
 
-int Evaluator_evaluate(Evaluator *eval, const Board *board) {
+int Evaluator_evaluate(Evaluator *eval, const Board *board)
+{
     int result = 0;
 
     result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_HV4_1)];
@@ -255,7 +307,8 @@ int Evaluator_evaluate(Evaluator *eval, const Board *board) {
     return result;
 }
 
-static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double diff) {
+static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double diff)
+{
     eval->pattern_num[pattern][id]++;
     eval->pattern_num[pattern][id] += diff;
 
@@ -265,7 +318,8 @@ static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double
     }
 }
 
-void Evaluator_add(Evaluator *eval, const Board *board, int value) {
+void Evaluator_add(Evaluator *eval, const Board *board, int value)
+{
     int index;
     double diff;
 
@@ -273,7 +327,7 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value) {
 
     index = Board_pattern(board, PATTERN_HV4_1);
     add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV4_3);
+    index = Board_pattern(board, PATTERN_HV4_2);
     add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
     index = Board_pattern(board, PATTERN_HV4_3);
     add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
@@ -368,7 +422,8 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value) {
     add_pattern(eval, PATTERN_PARITY, (Board_count_disks(board, EMPTY) & 1), -1, diff);
 }
 
-static void Evaluator_update_pattern(Evaluator *eval, int pattern, int id) {
+static void update_pattern(Evaluator *eval, int pattern, int id)
+{
     int diff;
 
     if (eval->pattern_num[pattern][id] > MIN_FREQUNECY) {
@@ -387,10 +442,11 @@ static void Evaluator_update_pattern(Evaluator *eval, int pattern, int id) {
     }
 }
 
-void Evaluator_update(Evaluator *eval) {
+void Evaluator_update(Evaluator *eval)
+{
     for (int i = 0; i < PATTERN_NUM; i++) {
         for (int j = 0; j < pattern_size[i]; j++) {
-            Evaluator_update_pattern(eval, i, j);
+            update_pattern(eval, i, j);
         }
     }
 }
