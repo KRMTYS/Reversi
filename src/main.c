@@ -23,7 +23,6 @@ const char option_str[] = "options\n \
 
 #define EVAL_FILE "eval.dat"
 
-
 static int get_rand(int max);
 static void move_random(Board *board, const Disk color);
 static void learn(Board *board, Evaluator *evaluator, Com *com, const int iteration);
@@ -33,7 +32,6 @@ static void print_board(const Board *board, const Disk color);
 static Pos get_input(Board *board, Disk color);
 static void play(Board *board, Com *com, Disk player);
 static void judge(const Board *board);
-
 
 static int get_rand(int max)
 {

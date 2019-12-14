@@ -310,7 +310,7 @@ int Evaluator_evaluate(Evaluator *eval, const Board *board)
 static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double diff)
 {
     eval->pattern_num[pattern][id]++;
-    eval->pattern_num[pattern][id] += diff;
+    eval->pattern_sum[pattern][id] += diff;
 
     if (mirror >= 0) {
         eval->pattern_num[pattern][mirror] = eval->pattern_num[pattern][id];
