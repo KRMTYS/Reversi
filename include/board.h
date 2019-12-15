@@ -50,28 +50,16 @@ typedef enum {
 } Pos;
 
 ///
-/// @fn     XY2POS
-/// @brief  座標値からインデックスを取得する
-///
-#define XY2POS(x, y) (((y) + 1) * (BOARD_SIZE + 1) + ((x) + 1))
-
-///
-/// @fn     CHAR2POS
-/// @brief  行・列文字からインデックスを取得する
-///
-#define CHAR2POS(col, row) (XY2POS((toupper((col)) - 'A'), ((row) - '1')))
-
-///
 /// @fn     POS2COL
 /// @brief  座標インデックスから列アルファベットを取得する
 ///
-#define POS2COL(pos) ('A' + ((pos) % (BOARD_SIZE + 1) - 1))
+#define POS2COL(pos) ('A' + Board_x((pos)))
 
 ///
 /// @fn     POS2ROW
 /// @brief  座標インデックスから行数を取得する
 ///
-#define POS2ROW(pos) ('0' + ((pos) / (BOARD_SIZE + 1) - 1))
+#define POS2ROW(pos) ('0' + (Board_y((pos))))
 
 typedef enum {
     PATTERN_HV4_1 = 0,
@@ -234,5 +222,13 @@ void Board_reverse(Board *board);
 /// @retval false   返せる石がない（有効手がない）
 ///
 bool Board_can_play(const Board *board, Disk color);
+
+Pos Board_pos(int x, int y);
+
+int Board_x(Pos pos);
+
+int Board_y(Pos pos);
+
+int Board_opponent(Disk color);
 
 #endif // BOARD_H_

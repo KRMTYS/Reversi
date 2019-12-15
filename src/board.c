@@ -741,3 +741,23 @@ bool Board_can_play(const Board *board, Disk disk)
 
     return false;
 }
+
+Pos Board_pos(int x, int y)
+{
+    return (((y) + 1) * (BOARD_SIZE + 1) + ((x) + 1));
+}
+
+int Board_x(Pos pos)
+{
+    return (pos % (BOARD_SIZE + 1) - 1);
+}
+
+int Board_y(Pos pos)
+{
+    return (pos / (BOARD_SIZE + 1) - 1);
+}
+
+int Board_opponent(Disk color)
+{
+    return  (1 ^ color);
+}
