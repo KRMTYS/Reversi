@@ -17,7 +17,7 @@
 /// @brief  候補手リスト
 ///
 typedef struct MoveList_ {
-    Pos pos;                ///< 座標
+    int pos;                ///< 座標
     struct MoveList_ *prev; ///< 前要素へのポインタ
     struct MoveList_ *next; ///< 次要素へのポインタ
 } MoveList;
@@ -47,14 +47,14 @@ struct Com_ {
 
 static bool initialize(Com *com, Evaluator *eval);
 
-static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos *next_move, bool pass, int alpha, int beta, int depth);
-static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* next_move, bool pass, int alpha, int beta, int depth);
+static int Com_mid_search(Com *com, int turn, int opponent, int *next_move, bool pass, int alpha, int beta, int depth);
+static int Com_end_search(Com *com, int turn, int opponent, int* next_move, bool pass, int alpha, int beta, int depth);
 
 static void make_move_list(Com *com);
 static void make_move_list(Com *com);
 static void remove_list(MoveList *movelist);
 static void recover_list(MoveList *movelist);
-static int sort_moves(Com *com, Disk color, MoveInfo *moveinfo);
+static int sort_moves(Com *com, int color, MoveInfo *moveinfo);
 
 static bool initialize(Com *com, Evaluator *eval)
 {
@@ -109,7 +109,7 @@ void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld)
     com->wld_depth   = th_wld;
 }
 
-Pos Com_get_nextmove(Com *com, Board *board, Disk color, int *value)
+int Com_get_nextmove(Com *com, Board *board, int color, int *value)
 {
     Board_copy(board, com->board);
     com->node = 0;
@@ -120,27 +120,27 @@ Pos Com_get_nextmove(Com *com, Board *board, Disk color, int *value)
 
     Board_init_pattern(com->board);
 
-    Pos next_move;
+    int next_move;
     int col;
     int val;
 
     if (left <= com->exact_depth) {
-        val = Com_end_search(com, color, OPPONENT(color), &next_move, false, -(BOARD_SIZE * BOARD_SIZE), (BOARD_SIZE * BOARD_SIZE), left);
+        val = Com_end_search(com, color, Board_opponent(color), &next_move, false, -(BOARD_SIZE * BOARD_SIZE), (BOARD_SIZE * BOARD_SIZE), left);
         val *= DISK_VALUE;
     } else if (left <= com->wld_depth) {
-        val = Com_end_search(com, color, OPPONENT(color), &next_move, false, -(BOARD_SIZE * BOARD_SIZE), 1, left);
+        val = Com_end_search(com, color, Board_opponent(color), &next_move, false, -(BOARD_SIZE * BOARD_SIZE), 1, left);
         val *= DISK_VALUE;
     } else {
         if (((color == WHITE) && (com->mid_depth % 2 == 0)) ||
             ((color == BLACK) && (com->mid_depth % 2 == 1))) {
                 Board_reverse(com->board);
-                col = OPPONENT(color);
+                col = Board_opponent(color);
             } else {
                 col = color;
             }
 
             // 評価値の上限/下限を十分大きな正負値とする
-            val = Com_mid_search(com, col, OPPONENT(col), &next_move, false, -MAX_VALUE, MAX_VALUE, com->mid_depth);
+            val = Com_mid_search(com, col, Board_opponent(col), &next_move, false, -MAX_VALUE, MAX_VALUE, com->mid_depth);
     }
 
     if (value) {
@@ -163,7 +163,7 @@ Pos Com_get_nextmove(Com *com, Board *board, Disk color, int *value)
 /// @param[in]  depth       残りの探索深さ
 /// @return 盤面の評価値
 ///
-static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos *next_move, bool pass, int alpha, int beta, int depth)
+static int Com_mid_search(Com *com, int turn, int opponent, int *next_move, bool pass, int alpha, int beta, int depth)
 {
     // 再帰探索の末端
     if (depth == 0) {
@@ -172,7 +172,7 @@ static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos *next_move, bo
         return Evaluator_evaluate(com->evaluator, com->board);
     }
 
-    Pos move;
+    int move;
     MoveList *p;
     int value;
     int max = alpha;
@@ -264,14 +264,14 @@ static int Com_mid_search(Com *com, Disk turn, Disk opponent, Pos *next_move, bo
 /// @param[in]  depth       残りの探索深さ
 /// @return 盤面の評価値
 ///
-static int Com_end_search(Com *com, Disk turn, Disk opponent, Pos* next_move, bool pass, int alpha, int beta, int depth)
+static int Com_end_search(Com *com, int turn, int opponent, int* next_move, bool pass, int alpha, int beta, int depth)
 {
     if (depth == 0) {
         com->node++;
         return Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent);
     }
 
-    Pos move;
+    int move;
     MoveList *p;
     int value;
     int max = alpha;
@@ -381,7 +381,7 @@ int Com_count_nodes(const Com *com)
 
 static void make_move_list(Com *com)
 {
-    Pos list[] = {
+    int list[] = {
         A1, A8, H8, H1,
         D3, D6, E3, E6, C4, C5, F4, F5,
         C3, C6, F3, F6,
@@ -432,7 +432,7 @@ static void recover_list(MoveList *movelist)
     }
 }
 
-static int sort_moves(Com *com, Disk color, MoveInfo *moveinfo)
+static int sort_moves(Com *com, int color, MoveInfo *moveinfo)
 {
     int info_num = 0;
     MoveList *p;

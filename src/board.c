@@ -41,12 +41,12 @@ typedef enum {
 /// @brief  リバーシ盤面
 ///
 struct Board_ {
-    Disk disks[NUM_DISK];   ///< マス情報
+    int disks[NUM_DISK];   ///< マス情報
     int  stack[STACK_SIZE];     ///< 返した石を記録するスタック
                                 ///< （返した石の位置1）...（~N）、（着手位置）、（相手の石色）、（返した石数）
     int  *sp;                   ///< スタックポインタ
     int  disk_num[3];           ///< 石数（0: 黒 1: 白、2: 空）
-    int  pattern[NUM_PATTERN];
+    int  pattern[NUM_PATTERN_ID];
     int  pattern_id[NUM_DISK][NUM_PATTERN_DIFF];
     int  pattern_diff[NUM_DISK][NUM_PATTERN_DIFF];
 };
@@ -63,19 +63,19 @@ struct Board_ {
 ///
 #define STACK_POP(board) (*(--(board)->sp))
 
-static int flip_line(Board *board, Disk color, Pos pos, Dir dir);
+static int flip_line(Board *board, int color, int pos, Dir dir);
 
-static void add_pattern(Board *board, int id, const Pos *pos_list, int num);
+static void add_pattern(Board *board, int id, const int *pos_list, int num);
 static void init_pattern_diff(Board *board);
 
-static void flip_square_black(Board *board, Pos pos);
-static void flip_square_white(Board *board, Pos pos);
-static void put_square_black(Board *board, Pos pos);
-static void put_square_white(Board *board, Pos pos);
+static void flip_square_black(Board *board, int pos);
+static void flip_square_white(Board *board, int pos);
+static void put_square_black(Board *board, int pos);
+static void put_square_white(Board *board, int pos);
 
-static int flip_line_pattern(Board *board, Disk disk, Pos pos, Dir dir);
+static int flip_line_pattern(Board *board, int disk, int pos, Dir dir);
 
-static int count_flips_line(const Board *board, Disk disk, Pos pos, Dir dir);
+static int count_flips_line(const Board *board, int disk, int pos, Dir dir);
 
 Board *Board_create(void)
 {
@@ -103,7 +103,7 @@ void Board_init(Board *board)
 
     for (int y = 0; y < BOARD_SIZE; y++) {
         for (int x = 0; x < BOARD_SIZE; x++) {
-            board->disks[XY2POS(x, y)] = EMPTY;
+            board->disks[Board_pos(x, y)] = EMPTY;
         }
     }
 
@@ -122,20 +122,20 @@ void Board_init(Board *board)
     Board_init_pattern(board);
 }
 
-Disk Board_disk(const Board *board, Pos pos)
+int Board_disk(const Board *board, int pos)
 {
     return board->disks[pos];
 }
 
-int Board_count_disks(const Board *board, Disk color)
+int Board_count_disks(const Board *board, int color)
 {
     return board->disk_num[color];
 }
 
-static int flip_line(Board *board, Disk color, Pos pos, Dir dir)
+static int flip_line(Board *board, int color, int pos, Dir dir)
 {
-    Pos  cur_pos;
-    Disk op = OPPONENT(color);
+    int  cur_pos;
+    int op = Board_opponent(color);
 
     // 相手の石を探索
     for (cur_pos = (pos + dir); board->disks[cur_pos] == op; cur_pos += dir);
@@ -153,7 +153,7 @@ static int flip_line(Board *board, Disk color, Pos pos, Dir dir)
     return count;
 }
 
-int Board_flip(Board *board, Disk color, Pos pos)
+int Board_flip(Board *board, int color, int pos)
 {
     if (board->disks[pos] != EMPTY) {
         return 0;
@@ -265,11 +265,11 @@ int Board_flip(Board *board, Disk color, Pos pos)
     if (count > 0) {
         board->disks[pos] = color;
         STACK_PUSH(board, pos);
-        STACK_PUSH(board, OPPONENT(color));
+        STACK_PUSH(board, Board_opponent(color));
         STACK_PUSH(board, count);
 
         board->disk_num[color] += (count + 1);
-        board->disk_num[OPPONENT(color)] -= count;
+        board->disk_num[Board_opponent(color)] -= count;
         board->disk_num[EMPTY]--;
     }
 
@@ -283,7 +283,7 @@ int Board_unflip(Board *board)
     }
 
     int  count = STACK_POP(board);
-    Disk color = STACK_POP(board);
+    int color = STACK_POP(board);
 
     board->disks[STACK_POP(board)] = EMPTY;
 
@@ -292,7 +292,7 @@ int Board_unflip(Board *board)
     }
 
     board->disk_num[color] += count;
-    board->disk_num[OPPONENT(color)] -= (count + 1);
+    board->disk_num[Board_opponent(color)] -= (count + 1);
     board->disk_num[EMPTY]++;
 
     return count;
@@ -300,7 +300,7 @@ int Board_unflip(Board *board)
 
 void Board_init_pattern(Board *board)
 {
-    for (int i = 0; i < NUM_PATTERN; i++) {
+    for (int i = 0; i < NUM_PATTERN_ID; i++) {
         board->pattern[i] = 0;
     }
 
@@ -318,7 +318,7 @@ int Board_pattern(const Board *board, int id)
     return board->pattern[id];
 }
 
-static void add_pattern(Board *board, int id, const Pos *pos_list, int num)
+static void add_pattern(Board *board, int id, const int *pos_list, int num)
 {
     int i, j;
     int n = 1;
@@ -336,50 +336,50 @@ static void add_pattern(Board *board, int id, const Pos *pos_list, int num)
 static void init_pattern_diff(Board *board)
 {
     int i, j;
-    Pos pattern_list[][9] = {
-        { A4, B4, C4, D4, E4, F4, G4, H4, NONE },
-        { A5, B5, C5, D5, E5, F5, G5, H5, NONE },
-        { D1, D2, D3, D4, D5, D6, D7, D8, NONE },
-        { E1, E2, E3, E4, E5, E6, E7, E8, NONE },
-        { A3, B3, C3, D3, E3, F3, G3, H3, NONE },
-        { A6, B6, C6, D6, E6, F6, G6, H6, NONE },
-        { C1, C2, C3, C4, C5, C6, C7, C8, NONE },
-        { F1, F2, F3, F4, F5, F6, F7, F8, NONE },
-        { A2, B2, C2, D2, E2, F2, G2, H2, NONE },
-        { A7, B7, C7, D7, E7, F7, G7, H7, NONE },
-        { B1, B2, B3, B4, B5, B6, B7, B8, NONE },
-        { G1, G2, G3, G4, G5, G6, G7, G8, NONE },
-        { A1, B2, C3, D4, E5, F6, G7, H8, NONE },
-        { A8, B7, C6, D5, E4, F3, G2, H1, NONE },
-        { A2, B3, C4, D5, E6, F7, G8, NONE },
-        { B1, C2, D3, E4, F5, G6, H7, NONE },
-        { A7, B6, C5, D4, E3, F2, G1, NONE },
-        { B8, C7, D6, E5, F4, G3, H2, NONE },
-        { A3, B4, C5, D6, E7, F8, NONE },
-        { C1, D2, E3, F4, G5, H6, NONE },
-        { A6, B5, C4, D3, E2, F1, NONE },
-        { C8, D7, E6, F5, G4, H3, NONE },
-        { A4, B5, C6, D7, E8, NONE },
-        { D1, E2, F3, G4, H5, NONE },
-        { A5, B4, C3, D2, E1, NONE },
-        { D8, E7, F6, G5, H4, NONE },
-        { A5, B6, C7, D8, NONE },
-        { E1, F2, G3, H4, NONE },
-        { A4, B3, C2, D1, NONE },
-        { E8, F7, G6, H5, NONE },
-        { B2, G1, F1, E1, D1, C1, B1, A1, NONE },
-        { G2, B1, C1, D1, E1, F1, G1, H1, NONE },
-        { B7, G8, F8, E8, D8, C8, B8, A8, NONE },
-        { G7, B8, C8, D8, E8, F8, G8, H8, NONE },
-        { B2, A7, A6, A5, A4, A3, A2, A1, NONE },
-        { B7, A2, A3, A4, A5, A6, A7, A8, NONE },
-        { G2, H7, H6, H5, H4, H3, H2, H1, NONE },
-        { G7, H2, H3, H4, H5, H6, H7, H8, NONE },
-        { B3, A3, C2, B2, A2, C1, B1, A1, NONE },
-        { G3, H3, F2, G2, H2, F1, G1, H1, NONE },
-        { B6, A6, C7, B7, A7, C8, B8, A8, NONE },
-        { G6, H6, F7, G7, H7, F8, G8, H8, NONE },
-        { NONE }
+    int pattern_list[][9] = {
+        { A4, B4, C4, D4, E4, F4, G4, H4, -1 },
+        { A5, B5, C5, D5, E5, F5, G5, H5, -1 },
+        { D1, D2, D3, D4, D5, D6, D7, D8, -1 },
+        { E1, E2, E3, E4, E5, E6, E7, E8, -1 },
+        { A3, B3, C3, D3, E3, F3, G3, H3, -1 },
+        { A6, B6, C6, D6, E6, F6, G6, H6, -1 },
+        { C1, C2, C3, C4, C5, C6, C7, C8, -1 },
+        { F1, F2, F3, F4, F5, F6, F7, F8, -1 },
+        { A2, B2, C2, D2, E2, F2, G2, H2, -1 },
+        { A7, B7, C7, D7, E7, F7, G7, H7, -1 },
+        { B1, B2, B3, B4, B5, B6, B7, B8, -1 },
+        { G1, G2, G3, G4, G5, G6, G7, G8, -1 },
+        { A1, B2, C3, D4, E5, F6, G7, H8, -1 },
+        { A8, B7, C6, D5, E4, F3, G2, H1, -1 },
+        { A2, B3, C4, D5, E6, F7, G8, -1 },
+        { B1, C2, D3, E4, F5, G6, H7, -1 },
+        { A7, B6, C5, D4, E3, F2, G1, -1 },
+        { B8, C7, D6, E5, F4, G3, H2, -1 },
+        { A3, B4, C5, D6, E7, F8, -1 },
+        { C1, D2, E3, F4, G5, H6, -1 },
+        { A6, B5, C4, D3, E2, F1, -1 },
+        { C8, D7, E6, F5, G4, H3, -1 },
+        { A4, B5, C6, D7, E8, -1 },
+        { D1, E2, F3, G4, H5, -1 },
+        { A5, B4, C3, D2, E1, -1 },
+        { D8, E7, F6, G5, H4, -1 },
+        { A5, B6, C7, D8, -1 },
+        { E1, F2, G3, H4, -1 },
+        { A4, B3, C2, D1, -1 },
+        { E8, F7, G6, H5, -1 },
+        { B2, G1, F1, E1, D1, C1, B1, A1, -1 },
+        { G2, B1, C1, D1, E1, F1, G1, H1, -1 },
+        { B7, G8, F8, E8, D8, C8, B8, A8, -1 },
+        { G7, B8, C8, D8, E8, F8, G8, H8, -1 },
+        { B2, A7, A6, A5, A4, A3, A2, A1, -1 },
+        { B7, A2, A3, A4, A5, A6, A7, A8, -1 },
+        { G2, H7, H6, H5, H4, H3, H2, H1, -1 },
+        { G7, H2, H3, H4, H5, H6, H7, H8, -1 },
+        { B3, A3, C2, B2, A2, C1, B1, A1, -1 },
+        { G3, H3, F2, G2, H2, F1, G1, H1, -1 },
+        { B6, A6, C7, B7, A7, C8, B8, A8, -1 },
+        { G6, H6, F7, G7, H7, F8, G8, H8, -1 },
+        { -1 }
     };
 
     for (i = 0; i < NUM_DISK; i++) {
@@ -388,13 +388,13 @@ static void init_pattern_diff(Board *board)
             board->pattern_diff[i][j] = 0;
         }
     }
-    for (i = 0; pattern_list[i][0] != NONE; i++) {
-        for (j = 0; pattern_list[i][j] != NONE; j++);
+    for (i = 0; pattern_list[i][0] >= 0; i++) {
+        for (j = 0; pattern_list[i][j] >= 0; j++);
         add_pattern(board, i, pattern_list[i], j);
     }
 }
 
-static void flip_square_black(Board *board, Pos pos)
+static void flip_square_black(Board *board, int pos)
 {
     board->disks[pos] = BLACK;
     board->pattern[board->pattern_id[pos][0]] -= board->pattern_diff[pos][0];
@@ -405,7 +405,7 @@ static void flip_square_black(Board *board, Pos pos)
     board->pattern[board->pattern_id[pos][5]] -= board->pattern_diff[pos][5];
 }
 
-static void flip_square_white(Board *board, Pos pos)
+static void flip_square_white(Board *board, int pos)
 {
     board->disks[pos] = WHITE;
     board->pattern[board->pattern_id[pos][0]] += board->pattern_diff[pos][0];
@@ -416,7 +416,7 @@ static void flip_square_white(Board *board, Pos pos)
     board->pattern[board->pattern_id[pos][5]] += board->pattern_diff[pos][5];
 }
 
-static void put_square_black(Board *board, Pos pos)
+static void put_square_black(Board *board, int pos)
 {
     board->disks[pos] = BLACK;
     board->pattern[board->pattern_id[pos][0]] += board->pattern_diff[pos][0];
@@ -427,7 +427,7 @@ static void put_square_black(Board *board, Pos pos)
     board->pattern[board->pattern_id[pos][5]] += board->pattern_diff[pos][5];
 }
 
-static void put_square_white(Board *board, Pos pos)
+static void put_square_white(Board *board, int pos)
 {
     board->disks[pos] = WHITE;
     board->pattern[board->pattern_id[pos][0]] += (board->pattern_diff[pos][0] + board->pattern_diff[pos][0]);
@@ -438,7 +438,7 @@ static void put_square_white(Board *board, Pos pos)
     board->pattern[board->pattern_id[pos][5]] += (board->pattern_diff[pos][5] + board->pattern_diff[pos][5]);
 }
 
-static void remove_square_black(Board *board, Pos pos)
+static void remove_square_black(Board *board, int pos)
 {
     board->disks[pos] = EMPTY;
     board->pattern[board->pattern_id[pos][0]] -= board->pattern_diff[pos][0];
@@ -449,7 +449,7 @@ static void remove_square_black(Board *board, Pos pos)
     board->pattern[board->pattern_id[pos][5]] -= board->pattern_diff[pos][5];
 }
 
-static void remove_square_white(Board *board, Pos pos)
+static void remove_square_white(Board *board, int pos)
 {
     board->disks[pos] = EMPTY;
     board->pattern[board->pattern_id[pos][0]] -= (board->pattern_diff[pos][0] + board->pattern_diff[pos][0]);
@@ -460,11 +460,11 @@ static void remove_square_white(Board *board, Pos pos)
     board->pattern[board->pattern_id[pos][5]] -= (board->pattern_diff[pos][5] + board->pattern_diff[pos][5]);
 }
 
-static int flip_line_pattern(Board *board, Disk disk, Pos pos, Dir dir)
+static int flip_line_pattern(Board *board, int disk, int pos, Dir dir)
 {
-    Pos cur_pos;
-    Disk op = OPPONENT(disk);
-    void (*func_flip)(Board *, Pos);
+    int cur_pos;
+    int op = Board_opponent(disk);
+    void (*func_flip)(Board *, int);
 
     if (disk == BLACK) {
         func_flip = flip_square_black;
@@ -486,7 +486,7 @@ static int flip_line_pattern(Board *board, Disk disk, Pos pos, Dir dir)
     return count;
 }
 
-int Board_flip_pattern(Board *board, Disk color, Pos pos)
+int Board_flip_pattern(Board *board, int color, int pos)
 {
     if (board->disks[pos] != EMPTY) {
         return 0;
@@ -602,11 +602,11 @@ int Board_flip_pattern(Board *board, Disk color, Pos pos)
             put_square_white(board, pos);
         }
         STACK_PUSH(board, pos);
-        STACK_PUSH(board, OPPONENT(color));
+        STACK_PUSH(board, Board_opponent(color));
         STACK_PUSH(board, count);
 
         board->disk_num[color] += (count + 1);
-        board->disk_num[OPPONENT(color)] -= count;
+        board->disk_num[Board_opponent(color)] -= count;
         board->disk_num[EMPTY]--;
     }
 
@@ -620,7 +620,7 @@ int Board_unflip_pattern(Board *board)
     }
 
     int count  = STACK_POP(board);
-    Disk color = STACK_POP(board);
+    int color = STACK_POP(board);
 
     if (color == BLACK) {
         remove_square_white(board, STACK_POP(board));
@@ -635,16 +635,16 @@ int Board_unflip_pattern(Board *board)
     }
 
     board->disk_num[color] += count;
-    board->disk_num[OPPONENT(color)] -= (count + 1);
+    board->disk_num[Board_opponent(color)] -= (count + 1);
     board->disk_num[EMPTY]++;
 
     return count;
 }
 
-static int count_flips_line(const Board *board, Disk disk, Pos pos, Dir dir)
+static int count_flips_line(const Board *board, int disk, int pos, Dir dir)
 {
     int cur_pos;
-    Disk op = OPPONENT(disk);
+    int op = Board_opponent(disk);
 
     // 相手の石を探索
     int count = 0;
@@ -659,7 +659,7 @@ static int count_flips_line(const Board *board, Disk disk, Pos pos, Dir dir)
     return count;
 }
 
-int Board_count_flips(const Board *board, Disk disk, Pos pos)
+int Board_count_flips(const Board *board, int disk, int pos)
 {
     int count = 0;
 
@@ -675,7 +675,7 @@ int Board_count_flips(const Board *board, Disk disk, Pos pos)
     return count;
 }
 
-bool Board_can_flip(const Board *board, Disk disk, Pos pos)
+bool Board_can_flip(const Board *board, int disk, int pos)
 {
     if (board->disks[pos] != EMPTY) {
         return false;
@@ -701,7 +701,7 @@ void Board_copy(const Board *src, Board *dst)
 
 void Board_reverse(Board *board)
 {
-    for (Pos pos = 0; pos < NUM_DISK; pos++) {
+    for (int pos = 0; pos < NUM_DISK; pos++) {
         switch (board->disks[pos]) {
             case BLACK:
                 board->disks[pos] = WHITE;
@@ -722,18 +722,18 @@ void Board_reverse(Board *board)
         p--;
         int count = *p;     // 返した石数
         p--;
-        *p = OPPONENT(*p);  // 色を反転
+        *p = Board_opponent(*p);  // 色を反転
         p -= (count + 1);   // （石数+着手）分さかのぼる
     }
 
     Board_init_pattern(board);
 }
 
-bool Board_can_play(const Board *board, Disk disk)
+bool Board_can_play(const Board *board, int disk)
 {
     for (int y = 0; y < BOARD_SIZE; y++) {
         for (int x = 0; x < BOARD_SIZE; x++) {
-            if (Board_can_flip(board, disk, XY2POS(x, y))) {
+            if (Board_can_flip(board, disk, Board_pos(x, y))) {
                 return true;
             }
         }
@@ -742,22 +742,22 @@ bool Board_can_play(const Board *board, Disk disk)
     return false;
 }
 
-Pos Board_pos(int x, int y)
+int Board_pos(int x, int y)
 {
     return (((y) + 1) * (BOARD_SIZE + 1) + ((x) + 1));
 }
 
-int Board_x(Pos pos)
+int Board_x(int pos)
 {
     return (pos % (BOARD_SIZE + 1) - 1);
 }
 
-int Board_y(Pos pos)
+int Board_y(int pos)
 {
     return (pos / (BOARD_SIZE + 1) - 1);
 }
 
-int Board_opponent(Disk color)
+int Board_opponent(int color)
 {
     return  (1 ^ color);
 }

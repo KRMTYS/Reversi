@@ -46,7 +46,7 @@ void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld);
 /// @param[out] value   評価値
 /// @return COMの次手
 ///
-Pos Com_get_nextmove(Com *com, Board *board, Disk color, int *value);
+int Com_get_nextmove(Com *com, Board *board, int color, int *value);
 
 ///
 /// @fn     Com_count_nodes

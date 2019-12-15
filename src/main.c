@@ -24,13 +24,13 @@ const char option_str[] = "options\n \
 #define EVAL_FILE "eval.dat"
 
 static int get_rand(int max);
-static void move_random(Board *board, const Disk color);
+static void move_random(Board *board, const int color);
 static void learn(Board *board, Evaluator *evaluator, Com *com, const int iteration);
 
-static void show_prompt(const Disk color);
-static void print_board(const Board *board, const Disk color);
-static Pos get_input(Board *board, Disk color);
-static void play(Board *board, Com *com, Disk player);
+static void show_prompt(const int color);
+static void print_board(const Board *board, const int color);
+static int get_input(Board *board, int color);
+static void play(Board *board, Com *com, int player);
 static void judge(const Board *board);
 
 static int get_rand(int max)
@@ -38,9 +38,9 @@ static int get_rand(int max)
     return (int)((double)max * rand() / (RAND_MAX + 1.0));
 }
 
-static void move_random(Board *board, const Disk color)
+static void move_random(Board *board, const int color)
 {
-    while (!Board_flip(board, color, XY2POS(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
+    while (!Board_flip(board, color, Board_pos(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
 }
 
 static void learn(Board *board, Evaluator *evaluator, Com *com, const int iteration)
@@ -54,8 +54,8 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, const int iterat
     for (int i = 0; i < iteration; i++) {
         Board_init(board);
 
-        Disk color = BLACK;
-        Pos move;
+        int color = BLACK;
+        int move;
         int turn = 0;
         int value;
 
@@ -65,7 +65,7 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, const int iterat
                 history[turn] = color;
                 turn++;
             }
-            color = OPPONENT(color);
+            color = Board_opponent(color);
         }
 
         while (true) {
@@ -79,10 +79,10 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, const int iterat
 
                 history[turn] = color;
                 turn++;
-            } else if (!Board_can_play(board, OPPONENT(color))){
+            } else if (!Board_can_play(board, Board_opponent(color))){
                 break;
             }
-            color = OPPONENT(color);
+            color = Board_opponent(color);
         }
 
         int result = (Board_count_disks(board, BLACK) - Board_count_disks(board, WHITE)) * DISK_VALUE;
@@ -124,7 +124,7 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, const int iterat
 /// @brief  プロンプトを表示する
 /// @param[in]  color   現在の手番
 ///
-static void show_prompt(const Disk color)
+static void show_prompt(const int color)
 {
     if (color== BLACK) {
         printf("Black(@) >> ");
@@ -133,14 +133,14 @@ static void show_prompt(const Disk color)
     }
 }
 
-static void print_board(const Board *board, const Disk color)
+static void print_board(const Board *board, const int color)
 {
     printf("    A B C D E F G H \n");
     printf("  +-----------------+\n");
     for (int y = 0; y < BOARD_SIZE; y++) {
         printf("%d | ", (y + 1));
         for (int x = 0; x < BOARD_SIZE; x++) {
-            Pos pos = XY2POS(x, y);
+            int pos = Board_pos(x, y);
             switch (Board_disk(board, pos)) {
                 case WHITE:
                     printf("O ");
@@ -170,9 +170,9 @@ static void print_board(const Board *board, const Disk color)
 /// @param[in]  color   現在の手番
 /// @return 入力に対応した座標インデックス（'A1' - 'H8'）
 ///
-static Pos get_input(Board *board, Disk color)
+static int get_input(Board *board, int color)
 {
-    Pos move;
+    int move;
 
     while (true) {
         char input[3];
@@ -216,9 +216,9 @@ static void judge(const Board *board)
     }
 }
 
-static void play(Board *board, Com *com, Disk player)
+static void play(Board *board, Com *com, int player)
 {
-    Disk turn = BLACK;
+    int turn = BLACK;
 
     int val;
 
@@ -228,7 +228,7 @@ static void play(Board *board, Com *com, Disk player)
         if (Board_can_play(board, turn)) {
             show_prompt(turn);
 
-            Pos move;
+            int move;
             if (turn == player) {
                 move = get_input(board, turn);
             } else {
@@ -239,13 +239,13 @@ static void play(Board *board, Com *com, Disk player)
 
             Board_flip(board, turn, move);
 
-        } else if (Board_can_play(board, OPPONENT(turn))) {
+        } else if (Board_can_play(board, Board_opponent(turn))) {
             printf("pass\n");
         } else {
             break;
         }
 
-        turn = OPPONENT(turn);
+        turn = Board_opponent(turn);
     }
 
     judge(board);
@@ -253,7 +253,7 @@ static void play(Board *board, Com *com, Disk player)
 
 int main(int argc, char *argv[])
 {
-    Disk player   = BLACK;
+    int player   = BLACK;
     bool learning = false;
     int  iteration;
 

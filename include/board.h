@@ -28,12 +28,6 @@ typedef enum {
 } Disk;
 
 ///
-/// @def    OPPONENT
-/// @brief  逆の色を取得する
-///
-#define OPPONENT(color)  (1 ^ (color))
-
-///
 /// @enum   Pos
 /// @brief  盤面上の座標インデックス（列アルファベット・行番号）
 ///
@@ -49,63 +43,69 @@ typedef enum {
     A8 = 73, B8, C8, D8, E8, F8, G8, H8
 } Pos;
 
+typedef enum {
+    PATTERN_ID_HV4_1 = 0,
+    PATTERN_ID_HV4_2,
+    PATTERN_ID_HV4_3,
+    PATTERN_ID_HV4_4,
+    PATTERN_ID_HV3_1,
+    PATTERN_ID_HV3_2,
+    PATTERN_ID_HV3_3,
+    PATTERN_ID_HV3_4,
+    PATTERN_ID_HV2_1,
+    PATTERN_ID_HV2_2,
+    PATTERN_ID_HV2_3,
+    PATTERN_ID_HV2_4,
+    PATTERN_ID_DIAG8_1,
+    PATTERN_ID_DIAG8_2,
+    PATTERN_ID_DIAG7_1,
+    PATTERN_ID_DIAG7_2,
+    PATTERN_ID_DIAG7_3,
+    PATTERN_ID_DIAG7_4,
+    PATTERN_ID_DIAG6_1,
+    PATTERN_ID_DIAG6_2,
+    PATTERN_ID_DIAG6_3,
+    PATTERN_ID_DIAG6_4,
+    PATTERN_ID_DIAG5_1,
+    PATTERN_ID_DIAG5_2,
+    PATTERN_ID_DIAG5_3,
+    PATTERN_ID_DIAG5_4,
+    PATTERN_ID_DIAG4_1,
+    PATTERN_ID_DIAG4_2,
+    PATTERN_ID_DIAG4_3,
+    PATTERN_ID_DIAG4_4,
+    PATTERN_ID_EDGE8_1,
+    PATTERN_ID_EDGE8_2,
+    PATTERN_ID_EDGE8_3,
+    PATTERN_ID_EDGE8_4,
+    PATTERN_ID_EDGE8_5,
+    PATTERN_ID_EDGE8_6,
+    PATTERN_ID_EDGE8_7,
+    PATTERN_ID_EDGE8_8,
+    PATTERN_ID_CORNER8_1,
+    PATTERN_ID_CORNER8_2,
+    PATTERN_ID_CORNER8_3,
+    PATTERN_ID_CORNER8_4,
+    NUM_PATTERN_ID
+} PatternId;
+
+///
+/// @fn     CHAR2TOPOS
+/// @brief  行・列文字から座標を取得する
+///
+#define CHAR2POS(col, row) (Board_pos((toupper(col) - 'A'), ((row) - '1')))
+
 ///
 /// @fn     POS2COL
-/// @brief  座標インデックスから列アルファベットを取得する
+/// @brief  座標から列アルファベットを取得する
 ///
 #define POS2COL(pos) ('A' + Board_x((pos)))
 
 ///
 /// @fn     POS2ROW
-/// @brief  座標インデックスから行数を取得する
+/// @brief  座標から行数を取得する
 ///
-#define POS2ROW(pos) ('0' + (Board_y((pos))))
-
-typedef enum {
-    PATTERN_HV4_1 = 0,
-    PATTERN_HV4_2,
-    PATTERN_HV4_3,
-    PATTERN_HV4_4,
-    PATTERN_HV3_1,
-    PATTERN_HV3_2,
-    PATTERN_HV3_3,
-    PATTERN_HV3_4,
-    PATTERN_HV2_1,
-    PATTERN_HV2_2,
-    PATTERN_HV2_3,
-    PATTERN_HV2_4,
-    PATTERN_DIAG8_1,
-    PATTERN_DIAG8_2,
-    PATTERN_DIAG7_1,
-    PATTERN_DIAG7_2,
-    PATTERN_DIAG7_3,
-    PATTERN_DIAG7_4,
-    PATTERN_DIAG6_1,
-    PATTERN_DIAG6_2,
-    PATTERN_DIAG6_3,
-    PATTERN_DIAG6_4,
-    PATTERN_DIAG5_1,
-    PATTERN_DIAG5_2,
-    PATTERN_DIAG5_3,
-    PATTERN_DIAG5_4,
-    PATTERN_DIAG4_1,
-    PATTERN_DIAG4_2,
-    PATTERN_DIAG4_3,
-    PATTERN_DIAG4_4,
-    PATTERN_EDGE8_1,
-    PATTERN_EDGE8_2,
-    PATTERN_EDGE8_3,
-    PATTERN_EDGE8_4,
-    PATTERN_EDGE8_5,
-    PATTERN_EDGE8_6,
-    PATTERN_EDGE8_7,
-    PATTERN_EDGE8_8,
-    PATTERN_CORNER8_1,
-    PATTERN_CORNER8_2,
-    PATTERN_CORNER8_3,
-    PATTERN_CORNER8_4,
-    NUM_PATTERN
-} PatternId;
+#define POS2ROW(pos) ('0' + Board_y((pos)))
 
 ///
 /// @typedef    Board
@@ -140,7 +140,7 @@ void Board_init(Board *board);
 /// @param[in]  pos     座標
 /// @return 指定した座標の状態
 ///
-Disk Board_disk(const Board *board, Pos pos);
+int Board_disk(const Board *board, int pos);
 
 ///
 /// @fn     Board_count_disks
@@ -149,7 +149,7 @@ Disk Board_disk(const Board *board, Pos pos);
 /// @param[in]  color   [in]    石
 /// @return 指定した石の数
 ///
-int Board_count_disks(const Board *board, Disk color);
+int Board_count_disks(const Board *board, int color);
 
 ///
 /// @fn     Board_flip
@@ -159,7 +159,7 @@ int Board_count_disks(const Board *board, Disk color);
 /// @param[in]      pos     座標
 /// @return 返した石数
 ///
-int Board_flip(Board *board, Disk color, Pos pos);
+int Board_flip(Board *board, int color, int pos);
 
 ///
 /// @fn     Board_unflip
@@ -178,7 +178,7 @@ int Board_unflip(Board *board);
 /// @retval true    返せる石がある（有効手である）
 /// @retval false   返せる石がない
 ///
-bool Board_can_flip(const Board *board, Disk color, Pos pos);
+bool Board_can_flip(const Board *board, int color, int pos);
 
 ///
 /// @fn     Board_count_flips
@@ -188,13 +188,13 @@ bool Board_can_flip(const Board *board, Disk color, Pos pos);
 /// @param[in]  pos     座標
 /// @return 指定した座標に石を置いたとき返せる石数
 ///
-int Board_count_flips(const Board *board, Disk color, Pos pos);
+int Board_count_flips(const Board *board, int color, int pos);
 
 void Board_init_pattern(Board *board);
 
 int Board_pattern(const Board *board, int id);
 
-int Board_flip_pattern(Board *board, Disk color, Pos pos);
+int Board_flip_pattern(Board *board, int color, int pos);
 
 int Board_unflip_pattern(Board *board);
 
@@ -221,14 +221,39 @@ void Board_reverse(Board *board);
 /// @retval true    返せる石がある（有効手がある）
 /// @retval false   返せる石がない（有効手がない）
 ///
-bool Board_can_play(const Board *board, Disk color);
+bool Board_can_play(const Board *board, int color);
 
-Pos Board_pos(int x, int y);
+///
+/// @fn     Board_pos
+/// @brief  x, y座標から座標インデックスを取得する
+/// @param[in]  x   x座標 (0-7)
+/// @param[in]  y   y座標 (0-7)
+/// @return 座標インデックス (A1-H8)
+///
+int Board_pos(int x, int y);
 
-int Board_x(Pos pos);
+///
+/// @fn     Board_x
+/// @brief  座標インデックスからx座標を取得する
+/// @param[in]  pos 座標インデックス
+/// @return x座標 (0-7)
+///
+int Board_x(int pos);
 
-int Board_y(Pos pos);
+///
+/// @fn     Board_y
+/// @brief  座標インデックスからy座標を取得する
+/// @param[in]  pos 座標インデックス
+/// @return y座標 (0-7)
+///
+int Board_y(int pos);
 
-int Board_opponent(Disk color);
+///
+/// @fn     Board_opponent
+/// @brief  反対の色を取得する
+/// @param[in]  color   石色 (BLACK/WHITE)
+/// @return 反対の石色
+///
+int Board_opponent(int color);
 
 #endif // BOARD_H_

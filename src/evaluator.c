@@ -47,9 +47,8 @@ typedef enum {
     PATTERN_EDGE8,      ///< edge: 辺パターン
     PATTERN_CORNER8,    ///< corner: 角パターン
     PATTERN_PARITY,     ///< パリティ
-    PATTERN_NUM         ///< パターン数
+    NUM_PATTERN         ///< パターン数
 } Pattern;
-
 
 ///
 /// @enum   Pow3
@@ -91,9 +90,9 @@ static const int pattern_size[] = {
 /// @brief  評価器
 ///
 struct Evaluator_ {
-    int    *values[PATTERN_NUM];   ///< 各パターンに対する評価値
-    int    *pattern_num[PATTERN_NUM];  ///< パターンの出現回数
-    double *pattern_sum[PATTERN_NUM];   ///< 評価値差分の合計
+    int    *values[NUM_PATTERN];   ///< 各パターンに対する評価値
+    int    *pattern_num[NUM_PATTERN];  ///< パターンの出現回数
+    double *pattern_sum[NUM_PATTERN];   ///< 評価値差分の合計
     int    mirror_line[POW3_8];    ///< 対称な列パターンを調べるための変数
     int    mirror_corner[POW3_8];  ///< 対称なコーナーパターンを調べるための変数
 };
@@ -109,7 +108,7 @@ static bool initialize(Evaluator *eval)
 {
     memset(eval, 0, sizeof(Evaluator));
 
-    for (int i = 0; i < PATTERN_NUM; i++) {
+    for (int i = 0; i < NUM_PATTERN; i++) {
         eval->values[i] = calloc(pattern_size[i], sizeof(int));
         if (!eval->values[i]) {
             return false;
@@ -166,7 +165,7 @@ static bool initialize(Evaluator *eval)
 
 static void finalize(Evaluator *eval)
 {
-    for (int i = 0; i < PATTERN_NUM; i++) {
+    for (int i = 0; i < NUM_PATTERN; i++) {
         if (eval->pattern_sum[i]) {
             free(eval->pattern_sum[i]);
         }
@@ -215,7 +214,7 @@ bool Evaluator_load(Evaluator *eval, const char *file)
         return false;
     }
 
-    for (int i = 0; i < PATTERN_NUM; i++) {
+    for (int i = 0; i < NUM_PATTERN; i++) {
         if (fread(eval->values[i], sizeof(int), pattern_size[i], fp) < (size_t)pattern_size[i]) {
             fclose(fp);
             return false;
@@ -234,7 +233,7 @@ bool Evaluator_save(Evaluator *eval, const char *file)
         return false;
     }
 
-    for (int i = 0; i < PATTERN_NUM; i++) {
+    for (int i = 0; i < NUM_PATTERN; i++) {
         if (fwrite(eval->values[i], sizeof(int), pattern_size[i], fp) < (size_t)pattern_size[i]) {
             fclose(fp);
             return true;
@@ -250,57 +249,57 @@ int Evaluator_evaluate(Evaluator *eval, const Board *board)
 {
     int result = 0;
 
-    result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_HV4_1)];
-    result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_HV4_2)];
-    result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_HV4_3)];
-    result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_HV4_4)];
+    result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_ID_HV4_1)];
+    result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_ID_HV4_2)];
+    result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_ID_HV4_3)];
+    result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_ID_HV4_4)];
 
-    result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_HV3_1)];
-    result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_HV3_2)];
-    result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_HV3_3)];
-    result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_HV3_4)];
+    result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_ID_HV3_1)];
+    result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_ID_HV3_2)];
+    result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_ID_HV3_3)];
+    result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_ID_HV3_4)];
 
-    result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_HV2_1)];
-    result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_HV2_2)];
-    result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_HV2_3)];
-    result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_HV2_4)];
+    result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_ID_HV2_1)];
+    result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_ID_HV2_2)];
+    result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_ID_HV2_3)];
+    result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_ID_HV2_4)];
 
-    result += eval->values[PATTERN_DIAG8][Board_pattern(board, PATTERN_DIAG8_1)];
-    result += eval->values[PATTERN_DIAG8][Board_pattern(board, PATTERN_DIAG8_2)];
+    result += eval->values[PATTERN_DIAG8][Board_pattern(board, PATTERN_ID_DIAG8_1)];
+    result += eval->values[PATTERN_DIAG8][Board_pattern(board, PATTERN_ID_DIAG8_2)];
 
-    result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_DIAG7_1)];
-    result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_DIAG7_2)];
-    result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_DIAG7_3)];
-    result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_DIAG7_4)];
+    result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_ID_DIAG7_1)];
+    result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_ID_DIAG7_2)];
+    result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_ID_DIAG7_3)];
+    result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_ID_DIAG7_4)];
 
-    result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_DIAG6_1)];
-    result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_DIAG6_2)];
-    result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_DIAG6_3)];
-    result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_DIAG6_4)];
+    result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_ID_DIAG6_1)];
+    result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_ID_DIAG6_2)];
+    result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_ID_DIAG6_3)];
+    result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_ID_DIAG6_4)];
 
-    result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_DIAG5_1)];
-    result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_DIAG5_2)];
-    result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_DIAG5_3)];
-    result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_DIAG5_4)];
+    result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_ID_DIAG5_1)];
+    result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_ID_DIAG5_2)];
+    result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_ID_DIAG5_3)];
+    result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_ID_DIAG5_4)];
 
-    result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_DIAG4_1)];
-    result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_DIAG4_2)];
-    result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_DIAG4_3)];
-    result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_DIAG4_4)];
+    result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_ID_DIAG4_1)];
+    result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_ID_DIAG4_2)];
+    result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_ID_DIAG4_3)];
+    result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_ID_DIAG4_4)];
 
-    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_EDGE8_1)];
-    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_EDGE8_2)];
-    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_EDGE8_3)];
-    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_EDGE8_4)];
-    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_EDGE8_5)];
-    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_EDGE8_6)];
-    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_EDGE8_7)];
-    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_EDGE8_8)];
+    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_1)];
+    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_2)];
+    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_3)];
+    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_4)];
+    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_5)];
+    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_6)];
+    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_7)];
+    result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_8)];
 
-    result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_CORNER8_1)];
-    result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_CORNER8_2)];
-    result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_CORNER8_3)];
-    result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_CORNER8_4)];
+    result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_ID_CORNER8_1)];
+    result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_ID_CORNER8_2)];
+    result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_ID_CORNER8_3)];
+    result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_ID_CORNER8_4)];
 
     result += eval->values[PATTERN_PARITY][Board_count_disks(board, EMPTY) & 1];
 
@@ -325,98 +324,98 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
 
     diff = (double)(value - Evaluator_evaluate(eval, board));
 
-    index = Board_pattern(board, PATTERN_HV4_1);
+    index = Board_pattern(board, PATTERN_ID_HV4_1);
     add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV4_2);
+    index = Board_pattern(board, PATTERN_ID_HV4_2);
     add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV4_3);
+    index = Board_pattern(board, PATTERN_ID_HV4_3);
     add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV4_4);
+    index = Board_pattern(board, PATTERN_ID_HV4_4);
     add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
 
-    index = Board_pattern(board, PATTERN_HV3_1);
+    index = Board_pattern(board, PATTERN_ID_HV3_1);
     add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV3_2);
+    index = Board_pattern(board, PATTERN_ID_HV3_2);
     add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV3_3);
+    index = Board_pattern(board, PATTERN_ID_HV3_3);
     add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV3_4);
+    index = Board_pattern(board, PATTERN_ID_HV3_4);
     add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
 
-    index = Board_pattern(board, PATTERN_HV2_1);
+    index = Board_pattern(board, PATTERN_ID_HV2_1);
     add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV2_2);
+    index = Board_pattern(board, PATTERN_ID_HV2_2);
     add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV2_3);
+    index = Board_pattern(board, PATTERN_ID_HV2_3);
     add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_HV2_4);
+    index = Board_pattern(board, PATTERN_ID_HV2_4);
     add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
 
-    index = Board_pattern(board, PATTERN_DIAG8_1);
+    index = Board_pattern(board, PATTERN_ID_DIAG8_1);
     add_pattern(eval, PATTERN_DIAG8, eval->mirror_line[index], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG8_2);
+    index = Board_pattern(board, PATTERN_ID_DIAG8_2);
     add_pattern(eval, PATTERN_DIAG8, eval->mirror_line[index], index, diff);
 
-    index = Board_pattern(board, PATTERN_DIAG7_1);
+    index = Board_pattern(board, PATTERN_ID_DIAG7_1);
     add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG7_2);
+    index = Board_pattern(board, PATTERN_ID_DIAG7_2);
     add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG7_3);
+    index = Board_pattern(board, PATTERN_ID_DIAG7_3);
     add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG7_4);
+    index = Board_pattern(board, PATTERN_ID_DIAG7_4);
     add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
 
-    index = Board_pattern(board, PATTERN_DIAG6_1);
+    index = Board_pattern(board, PATTERN_ID_DIAG6_1);
     add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG6_2);
+    index = Board_pattern(board, PATTERN_ID_DIAG6_2);
     add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG6_3);
+    index = Board_pattern(board, PATTERN_ID_DIAG6_3);
     add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG6_4);
+    index = Board_pattern(board, PATTERN_ID_DIAG6_4);
     add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
 
-    index = Board_pattern(board, PATTERN_DIAG5_1);
+    index = Board_pattern(board, PATTERN_ID_DIAG5_1);
     add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG5_2);
+    index = Board_pattern(board, PATTERN_ID_DIAG5_2);
     add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG5_3);
+    index = Board_pattern(board, PATTERN_ID_DIAG5_3);
     add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG5_4);
+    index = Board_pattern(board, PATTERN_ID_DIAG5_4);
     add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
 
-    index = Board_pattern(board, PATTERN_DIAG4_1);
+    index = Board_pattern(board, PATTERN_ID_DIAG4_1);
     add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG4_2);
+    index = Board_pattern(board, PATTERN_ID_DIAG4_2);
     add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG4_3);
+    index = Board_pattern(board, PATTERN_ID_DIAG4_3);
     add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
-    index = Board_pattern(board, PATTERN_DIAG4_4);
+    index = Board_pattern(board, PATTERN_ID_DIAG4_4);
     add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
 
-    index = Board_pattern(board, PATTERN_EDGE8_1);
+    index = Board_pattern(board, PATTERN_ID_EDGE8_1);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
-    index = Board_pattern(board, PATTERN_EDGE8_2);
+    index = Board_pattern(board, PATTERN_ID_EDGE8_2);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
-    index = Board_pattern(board, PATTERN_EDGE8_3);
+    index = Board_pattern(board, PATTERN_ID_EDGE8_3);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
-    index = Board_pattern(board, PATTERN_EDGE8_4);
+    index = Board_pattern(board, PATTERN_ID_EDGE8_4);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
-    index = Board_pattern(board, PATTERN_EDGE8_5);
+    index = Board_pattern(board, PATTERN_ID_EDGE8_5);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
-    index = Board_pattern(board, PATTERN_EDGE8_6);
+    index = Board_pattern(board, PATTERN_ID_EDGE8_6);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
-    index = Board_pattern(board, PATTERN_EDGE8_7);
+    index = Board_pattern(board, PATTERN_ID_EDGE8_7);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
-    index = Board_pattern(board, PATTERN_EDGE8_8);
+    index = Board_pattern(board, PATTERN_ID_EDGE8_8);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
 
-    index = Board_pattern(board, PATTERN_CORNER8_1);
+    index = Board_pattern(board, PATTERN_ID_CORNER8_1);
     add_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
-    index = Board_pattern(board, PATTERN_CORNER8_2);
+    index = Board_pattern(board, PATTERN_ID_CORNER8_2);
     add_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
-    index = Board_pattern(board, PATTERN_CORNER8_3);
+    index = Board_pattern(board, PATTERN_ID_CORNER8_3);
     add_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
-    index = Board_pattern(board, PATTERN_CORNER8_4);
+    index = Board_pattern(board, PATTERN_ID_CORNER8_4);
     add_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
 
     add_pattern(eval, PATTERN_PARITY, (Board_count_disks(board, EMPTY) & 1), -1, diff);
@@ -444,7 +443,7 @@ static void update_pattern(Evaluator *eval, int pattern, int id)
 
 void Evaluator_update(Evaluator *eval)
 {
-    for (int i = 0; i < PATTERN_NUM; i++) {
+    for (int i = 0; i < NUM_PATTERN; i++) {
         for (int j = 0; j < pattern_size[i]; j++) {
             update_pattern(eval, i, j);
         }
