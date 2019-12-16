@@ -105,7 +105,7 @@ typedef enum {
 /// @fn     POS2ROW
 /// @brief  座標から行数を取得する
 ///
-#define POS2ROW(pos) ('0' + Board_y((pos)))
+#define POS2ROW(pos) ('1' + Board_y((pos)))
 
 ///
 /// @typedef    Board
