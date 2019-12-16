@@ -12,6 +12,7 @@
 #include "board.h"
 #include "com.h"
 #include "evaluator.h"
+#include "learn.h"
 
 const char option_str[] = "options\n \
     -b  play with BLACK (by default)\n \
@@ -23,101 +24,11 @@ const char option_str[] = "options\n \
 
 #define EVAL_FILE "eval.dat"
 
-static int get_rand(int max);
-static void move_random(Board *board, const int color);
-static void learn(Board *board, Evaluator *evaluator, Com *com, const int iteration);
-
 static void show_prompt(const int color);
 static void print_board(const Board *board, const int color);
 static int get_input(Board *board, int color);
 static void play(Board *board, Com *com, int player);
 static void judge(const Board *board);
-
-static int get_rand(int max)
-{
-    return (int)((double)max * rand() / (RAND_MAX + 1.0));
-}
-
-static void move_random(Board *board, const int color)
-{
-    while (!Board_flip(board, color, Board_pos(get_rand(BOARD_SIZE), get_rand(BOARD_SIZE))));
-}
-
-static void learn(Board *board, Evaluator *evaluator, Com *com, const int iteration)
-{
-    int  history[BOARD_SIZE * BOARD_SIZE];
-
-    Com_set_level(com, 4, 12, 12);
-
-    printf("Start learning\n");
-
-    for (int i = 0; i < iteration; i++) {
-        Board_init(board);
-
-        int color = BLACK;
-        int move;
-        int turn = 0;
-        int value;
-
-        for (int j = 0; j < 8; j++) {
-            if (Board_can_play(board, color)) {
-                move_random(board, color);
-                history[turn] = color;
-                turn++;
-            }
-            color = Board_opponent(color);
-        }
-
-        while (true) {
-            if (Board_can_play(board, color)) {
-                if ((Board_count_disks(board, EMPTY) > 12) && (get_rand(100) < 1)) {
-                    move_random(board, color);
-                } else {
-                    move = Com_get_nextmove(com, board, color, &value);
-                    Board_flip(board, color, move);
-                }
-
-                history[turn] = color;
-                turn++;
-            } else if (!Board_can_play(board, Board_opponent(color))){
-                break;
-            }
-            color = Board_opponent(color);
-        }
-
-        int result = (Board_count_disks(board, BLACK) - Board_count_disks(board, WHITE)) * DISK_VALUE;
-        for (int j = Board_count_disks(board, EMPTY); j < 8; j++) {
-            turn--;
-            Board_unflip(board);
-        }
-        for (int j = Board_count_disks(board, EMPTY); j < (BOARD_SIZE * BOARD_SIZE - 12); j++) {
-            turn--;
-            Board_unflip(board);
-            if (history[turn] == BLACK) {
-                // 局面の登録
-                Evaluator_add(evaluator, board, result);
-            } else {
-                Board_reverse(board);
-                // 局面の登録
-                Evaluator_add(evaluator, board, -result);
-                Board_reverse(board);
-            }
-        }
-
-        // パラメータ更新
-        if ((i + 1) % 10 == 0) {
-            Evaluator_update(evaluator);
-        }
-
-        if ((i + 1) % 100 == 0) {
-            printf("Learning ... %d / %d\n", (i + 1), iteration);
-            Evaluator_save(evaluator, EVAL_FILE);
-        }
-    }
-
-    Evaluator_save(evaluator, EVAL_FILE);
-    printf("Finished\n");
-}
 
 /// 
 /// @fn     show_prompt
@@ -127,7 +38,7 @@ static void learn(Board *board, Evaluator *evaluator, Com *com, const int iterat
 static void show_prompt(const int color)
 {
     if (color== BLACK) {
-        printf("Black(@) >> ");
+        printf("Black(X) >> ");
     } else {
         printf("White(O) >> ");
     }
@@ -292,7 +203,7 @@ int main(int argc, char *argv[])
     Com *com = Com_create(evaluator);
 
     if (learning) {
-        learn(board, evaluator, com, iteration);
+        learn(board, evaluator, com, iteration, EVAL_FILE);
     } else {
         Com_set_level(com, 6, 10, 6);
         play(board, com, player);
