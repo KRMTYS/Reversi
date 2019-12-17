@@ -14,6 +14,11 @@
 #include "evaluator.h"
 #include "learn.h"
 
+typedef struct {
+    int player_turn;
+    int learn_iter;
+} Setting;
+
 const char option_str[] = "options\n \
     -b  play with BLACK (by default)\n \
     -w  play with WHITE\n \
@@ -24,26 +29,51 @@ const char option_str[] = "options\n \
 
 #define EVAL_FILE "eval.dat"
 
-static void show_prompt(const int color);
+static bool parse_options(int argc, char* argv[], Setting *setting);
 static void print_board(const Board *board, const int color);
-static int get_input(Board *board, int color);
-static void play(Board *board, Com *com, int player);
-static void judge(const Board *board);
+static char *get_stream(char *buffer, const int size, FILE *stream);
+static void play(Board *board, Com *com, Setting *setting);
 
-/// 
-/// @fn     show_prompt
-/// @brief  プロンプトを表示する
-/// @param[in]  color   現在の手番
-///
-static void show_prompt(const int color)
+static bool parse_options(int argc, char* argv[], Setting *setting)
 {
-    if (color== BLACK) {
-        printf("Black(X) >> ");
-    } else {
-        printf("White(O) >> ");
+    setting->player_turn = BLACK;
+    setting->learn_iter  = 0;
+
+    int opt;
+    while ((opt = getopt(argc, argv, "bwcl:h")) != -1) {
+        switch (opt) {
+            case 'b':
+                setting->player_turn = BLACK;
+                break;
+            case 'w':
+                setting->player_turn = WHITE;
+                break;
+            case 'c':
+                setting->player_turn = EMPTY;
+                break;
+            case 'l':
+                setting->learn_iter = atoi(optarg);
+                break;
+            case 'h':
+                printf(option_str);
+                return false;
+                break;
+            default:
+                printf("invalid option : \'%c\'", opt);
+                return false;
+                break;
+        }
     }
+
+    return true;
 }
 
+/// 
+/// @fn     print_board
+/// @brief  盤面を表示する
+/// @param[in]  board   盤面
+/// @param[in]  color   現在の手番
+///
 static void print_board(const Board *board, const int color)
 {
     printf("    A B C D E F G H \n");
@@ -53,17 +83,17 @@ static void print_board(const Board *board, const int color)
         for (int x = 0; x < BOARD_SIZE; x++) {
             int pos = Board_pos(x, y);
             switch (Board_disk(board, pos)) {
+                case BLACK:
+                    printf("X ");
+                    break;
                 case WHITE:
                     printf("O ");
-                    break;
-                case BLACK:
-                    printf("@ ");
                     break;
                 default:
                     if (Board_can_flip(board, color, pos)) {
                         printf("* ");
                     } else {
-                        printf("- ");
+                        printf("  ");
                     }
                     break;
             }
@@ -71,85 +101,60 @@ static void print_board(const Board *board, const int color)
         printf("|\n");
     }
     printf("  +-----------------+\n");
-    printf("@:%2d O:%2d\n", Board_count_disks(board, BLACK), Board_count_disks(board, WHITE));
+    printf("X: %d O: %d\n", Board_count_disks(board, BLACK), Board_count_disks(board, WHITE));
 }
 
-/// 
-/// @fn     get_input
-/// @brief  プレイヤー入力を取得する
-/// @param[in]  board   盤面
-/// @param[in]  color   現在の手番
-/// @return 入力に対応した座標インデックス（'A1' - 'H8'）
-///
-static int get_input(Board *board, int color)
+static char *get_stream(char *buffer, const int size, FILE *stream)
 {
-    int move;
+    char *result = fgets(buffer, size, stream);
 
-    while (true) {
-        char input[3];
-        fgets(input, sizeof(input), stdin);
-
-        // 標準出力に残る文字を読み飛ばす
-        if(!feof(stdin)) {
-            while (getchar() != '\n');
-        }
-
-        move = CHAR2POS(input[0], input[1]);
-
-        // 着手判定
-        if (Board_can_flip(board, color, move)) {
-            break;
-        } else {
-            print_board(board, color);
-            show_prompt(color);
+    if (result != NULL) {
+        for (int i = 0; i < size; i++) {
+            if (buffer[i] == '\n') {
+                buffer[i] = '\0';
+            }
         }
     }
 
-    return move;
+    return result;
 }
 
-/// 
-/// @fn     judge
-/// @brief  勝敗を判定する
+///
+/// @fn     play
+/// @brief  ゲーム実行
 /// @param[in]  board   盤面
 ///
-static void judge(const Board *board)
+static void play(Board *board, Com *com, Setting *setting)
 {
-    int n_black = Board_count_disks(board, BLACK);
-    int n_white = Board_count_disks(board, WHITE);
+    int  turn = BLACK;
+    int  move;
+    int  val;
+    char buffer[32];
 
-    if (n_black > n_white) {
-        printf("*** BLACK wins ***\n");
-    } else if (n_black < n_white) {
-        printf("*** WHITE wins ***\n");
-    } else {
-        printf("*** draw ***\n");
-    }
-}
-
-static void play(Board *board, Com *com, int player)
-{
-    int turn = BLACK;
-
-    int val;
+    Com_set_level(com, 6, 10, 6);
 
     while (true) {
         print_board(board, turn);
 
         if (Board_can_play(board, turn)) {
-            show_prompt(turn);
+            printf(">> ");
+            if (turn == setting->player_turn) {
+                while (true) {
+                    while (!get_stream(buffer, sizeof(buffer), stdin)) {
+                        printf(">> ");
+                    }
 
-            int move;
-            if (turn == player) {
-                move = get_input(board, turn);
+                    move = CHAR2POS(buffer[0], buffer[1]);
+                    if (Board_can_flip(board, turn, move)) {
+                        break;
+                    }
+                }
             } else {
                 move = Com_get_nextmove(com, board, turn, &val);
-                // プレイヤーと同様に入力座標を表示
                 printf("%c%c\n", POS2COL(move), POS2ROW(move));
             }
 
             Board_flip(board, turn, move);
-
         } else if (Board_can_play(board, Board_opponent(turn))) {
             printf("pass\n");
         } else {
@@ -159,40 +164,22 @@ static void play(Board *board, Com *com, int player)
         turn = Board_opponent(turn);
     }
 
-    judge(board);
+    // 勝敗判定
+    int diff = Board_count_disks(board, BLACK) - Board_count_disks(board, WHITE);
+    if (diff > 0) {
+        printf("* BLACK wins *\n");
+    } else if (diff < 0) {
+        printf("* WHITE wins *\n");
+    } else {
+        printf("* draw *\n");
+    }
 }
 
 int main(int argc, char *argv[])
 {
-    int player   = BLACK;
-    bool learning = false;
-    int  iteration;
-
-    int opt;
-    while ((opt = getopt(argc, argv, "bwcl:h")) != -1) {
-        switch (opt) {
-            case 'b':
-                player = BLACK;
-                break;
-            case 'w':
-                player = WHITE;
-                break;
-            case 'c':
-                player = EMPTY;
-                break;
-            case 'l':
-                learning  = true;
-                iteration = atoi(optarg);
-                break;
-            case 'h':
-                printf(option_str);
-                return 0;
-                break;
-            default:
-                printf("invalid option : \'%c\'", opt);
-                return -1;
-                break;
-        }
+    Setting setting;
+    if (!parse_options(argc, argv, &setting)) {
+        exit(EXIT_FAILURE);
     }
 
     Board *board = Board_create();
@@ -202,11 +189,10 @@ int main(int argc, char *argv[])
 
     Com *com = Com_create(evaluator);
 
-    if (learning) {
-        learn(board, evaluator, com, iteration, EVAL_FILE);
+    if (setting.learn_iter > 0) {
+        learn(board, evaluator, com, setting.learn_iter, EVAL_FILE);
     } else {
-        Com_set_level(com, 6, 10, 6);
-        play(board, com, player);
+        play(board, com, &setting);
     }
 
     Com_delete(com);
