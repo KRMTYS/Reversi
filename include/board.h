@@ -43,38 +43,43 @@ typedef enum {
     A8 = 73, B8, C8, D8, E8, F8, G8, H8
 } Pos;
 
+///
+/// @enum   PatternId
+/// @brief  盤面の評価パターンを示すインデックス
+/// @note   evaluator.cの各評価パターンに対応
+///
 typedef enum {
-    PATTERN_ID_HV4_1 = 0,
+    PATTERN_ID_HV4_1 = 0,   ///< hor./vert.4
     PATTERN_ID_HV4_2,
     PATTERN_ID_HV4_3,
     PATTERN_ID_HV4_4,
-    PATTERN_ID_HV3_1,
+    PATTERN_ID_HV3_1,       ///< hor./vert.3
     PATTERN_ID_HV3_2,
     PATTERN_ID_HV3_3,
     PATTERN_ID_HV3_4,
-    PATTERN_ID_HV2_1,
+    PATTERN_ID_HV2_1,       ///< hor./vert.2
     PATTERN_ID_HV2_2,
     PATTERN_ID_HV2_3,
     PATTERN_ID_HV2_4,
-    PATTERN_ID_DIAG8_1,
+    PATTERN_ID_DIAG8_1,     ///< diag8
     PATTERN_ID_DIAG8_2,
-    PATTERN_ID_DIAG7_1,
+    PATTERN_ID_DIAG7_1,     ///< diag7
     PATTERN_ID_DIAG7_2,
     PATTERN_ID_DIAG7_3,
     PATTERN_ID_DIAG7_4,
-    PATTERN_ID_DIAG6_1,
+    PATTERN_ID_DIAG6_1,     ///< diag6
     PATTERN_ID_DIAG6_2,
     PATTERN_ID_DIAG6_3,
     PATTERN_ID_DIAG6_4,
-    PATTERN_ID_DIAG5_1,
+    PATTERN_ID_DIAG5_1,     ///< diag5
     PATTERN_ID_DIAG5_2,
     PATTERN_ID_DIAG5_3,
     PATTERN_ID_DIAG5_4,
-    PATTERN_ID_DIAG4_1,
+    PATTERN_ID_DIAG4_1,     ///< diag4
     PATTERN_ID_DIAG4_2,
     PATTERN_ID_DIAG4_3,
     PATTERN_ID_DIAG4_4,
-    PATTERN_ID_EDGE8_1,
+    PATTERN_ID_EDGE8_1,     ///< edge
     PATTERN_ID_EDGE8_2,
     PATTERN_ID_EDGE8_3,
     PATTERN_ID_EDGE8_4,
@@ -82,11 +87,11 @@ typedef enum {
     PATTERN_ID_EDGE8_6,
     PATTERN_ID_EDGE8_7,
     PATTERN_ID_EDGE8_8,
-    PATTERN_ID_CORNER8_1,
+    PATTERN_ID_CORNER8_1,   ///< corner
     PATTERN_ID_CORNER8_2,
     PATTERN_ID_CORNER8_3,
     PATTERN_ID_CORNER8_4,
-    NUM_PATTERN_ID
+    NUM_PATTERN_ID          ///< パターン数
 } PatternId;
 
 ///
@@ -121,7 +126,7 @@ Board *Board_create(void);
 
 ///
 /// @fn     Board_delete
-/// @brief  盤面を消去する
+/// @brief  盤面を破棄する
 /// @param[in]  board    盤面
 ///
 void Board_delete(Board *board);
@@ -165,7 +170,7 @@ int Board_flip(Board *board, int color, int pos);
 /// @fn     Board_unflip
 /// @brief  局面を一手戻す
 /// @param[in,out]  board    盤面
-/// @return 返した石数
+/// @return 直前の手で返した石数
 ///
 int Board_unflip(Board *board);
 
@@ -186,16 +191,41 @@ bool Board_can_flip(const Board *board, int color, int pos);
 /// @param[in]  board   盤面
 /// @param[in]  color   手番
 /// @param[in]  pos     座標
-/// @return 指定した座標に石を置いたとき返せる石数
+/// @return 返せる石数
 ///
 int Board_count_flips(const Board *board, int color, int pos);
 
+///
+/// @fn     Board_init_pattern
+/// @brief  評価パターンを初期化する
+/// @param[in,out]  board   盤面
+///
 void Board_init_pattern(Board *board);
 
+///
+/// @fn     Board_pattern
+/// @brief  評価パターンの状態を取得する
+/// @param[in]  board   盤面
+/// @param[in]  id      パターンID
+///
 int Board_pattern(const Board *board, int id);
 
+///
+/// @fn     Board_flip_pattern
+/// @brief  パターン更新し着手する
+/// @param[in,out]  board   盤面
+/// @param[in]      color   手番
+/// @param[in]      pos     座標
+/// @return 返した石数
+///
 int Board_flip_pattern(Board *board, int color, int pos);
 
+///
+/// @fn     Board_unflip_pattern
+/// @brief  パターン更新し一手戻る
+/// @param[in,out]  board   盤面
+/// @return 直前の手で返した石数
+///
 int Board_unflip_pattern(Board *board);
 
 ///

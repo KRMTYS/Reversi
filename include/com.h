@@ -10,6 +10,10 @@
 #include "board.h"
 #include "evaluator.h"
 
+///
+/// @typedef    Com
+/// @brief      COM思考ルーチン
+///
 typedef struct Com_ Com;
 
 ///
@@ -23,17 +27,17 @@ Com *Com_create(Evaluator* eval);
 ///
 /// @fn     Com_delete
 /// @brief  COMを破棄する
-/// @param[in]  com     COM
+/// @param[in,out]  com     COM
 ///
 void Com_delete(Com *com);
 
 ///
 /// @fn     Com_set_level
 /// @brief  COMのレベルを設定する
-/// @param[in] com          COM
-/// @param[in] mid_depth    中盤の先読み手数
-/// @param[in] th_exact     完全読みする空きマスの数
-/// @param[in] th_wld       必勝読みする空きマスの数
+/// @param[in,out]  com          COM
+/// @param[in]      mid_depth    中盤の先読み手数
+/// @param[in]      th_exact     完全読みする空きマスの数
+/// @param[in]      th_wld       必勝読みする空きマスの数
 ///
 void Com_set_level(Com *com, int mid_depth, int th_exact, int th_wld);
 
