@@ -14,11 +14,19 @@
 ///
 #define NUM_DISK ((BOARD_SIZE + 1) * (BOARD_SIZE + 2) + 1)
 
-// スタック長
-// 返せる最大の石数：(BOARD_SIZE - 2) * 3
-// 着手位置、相手の石色、返した石数の情報：3
+///
+/// @def    STACK_SIZE
+/// @brief  スタック長
+/// @note   (BOARD_SIZE - 2) * 3: 返せる最大の石数
+///         3: 着手位置、相手の石色、返した石数
+///         BOARD_SIZE * BOARD_SIZE - 4: 着手できる総マス数
+/// 
 #define STACK_SIZE (((BOARD_SIZE - 2) * 3 + 3) * BOARD_SIZE * BOARD_SIZE - 4)
 
+///
+/// @def    NUM_PATTERN_DIFF
+/// @brief  1マスの変化で更新される最大パターン数
+///
 #define NUM_PATTERN_DIFF 6
 
 ///
@@ -41,16 +49,19 @@ typedef enum {
 /// @brief  リバーシ盤面
 ///
 struct Board_ {
-    int disks[NUM_DISK];   ///< マス情報
-    int  stack[STACK_SIZE];     ///< 返した石を記録するスタック
-                                ///< （返した石の位置1）...（~N）、（着手位置）、（相手の石色）、（返した石数）
-    int  *sp;                   ///< スタックポインタ
-    int  disk_num[3];           ///< 石数（0: 黒 1: 白、2: 空）
-    int  pattern[NUM_PATTERN_ID];
-    int  pattern_id[NUM_DISK][NUM_PATTERN_DIFF];
-    int  pattern_diff[NUM_DISK][NUM_PATTERN_DIFF];
+    int disks[NUM_DISK];                            ///< マス情報
+    int stack[STACK_SIZE];                          ///< 着手情報スタック: （返した石の位置1 - N）、（着手位置）、（相手の石色）、（返した石数）
+    int  *sp;                                       ///< スタックポインタ
+    int  disk_num[3];                               ///< 石数（0: 黒 1: 白、2: 空）
+    int  pattern[NUM_PATTERN_ID];                   ///< 盤面パターン状態
+    int  pattern_id[NUM_DISK][NUM_PATTERN_DIFF];    ///< あるマスへの着手時に更新するパターンID
+    int  pattern_diff[NUM_DISK][NUM_PATTERN_DIFF];  ///< あるマスへの着手時に更新するパターン状態の差分
 };
 
+///
+/// @def    OPPONENT
+/// @brief  逆色
+///
 #define OPPONENT(color) (BLACK + WHITE - color)
 
 ///
@@ -117,6 +128,7 @@ void Board_init(Board *board)
 
     board->sp = board->stack;
 
+    // 石数の初期化
     board->disk_num[BLACK] = 2;
     board->disk_num[WHITE] = 2;
     board->disk_num[EMPTY] = (BOARD_SIZE * BOARD_SIZE) - 4;
@@ -134,6 +146,15 @@ int Board_count_disks(const Board *board, int color)
     return board->disk_num[color];
 }
 
+///
+/// @fn     flip_line
+/// @brief  一方向へ石を返す
+/// @param[in,out]  board   盤面
+/// @param[in]      color   手番
+/// @param[in]      pos     着手座標
+/// @param[in]      dir     探索方向
+/// @return 返した石数
+///
 static int flip_line(Board *board, int color, int pos, int dir)
 {
     int op = Board_opponent(color);
@@ -146,6 +167,8 @@ static int flip_line(Board *board, int color, int pos, int dir)
         return 0;
     }
 
+    // 一方向へ逆色を探索
+    // ループアンローリングで高速化する
     cur_pos += dir;
     if (board->disks[cur_pos] == op) {
         cur_pos += dir;
@@ -160,6 +183,7 @@ static int flip_line(Board *board, int color, int pos, int dir)
                         if (board->disks[cur_pos] == op) {
                             return 0;
                         }
+                        // 端が同色石のとき反転、スタックへ記録
                         cur_pos -= dir;
                         count++;
                         board->disks[cur_pos] = color;
@@ -211,6 +235,7 @@ int Board_flip(Board *board, int color, int pos)
 
     int count = 0;
 
+    // マスごとに探索方向を限定し高速化する
     switch (pos) {
         case C1:
         case C2:
@@ -314,6 +339,7 @@ int Board_flip(Board *board, int color, int pos)
 
     if (count > 0) {
         board->disks[pos] = color;
+        // スタックへ記録
         STACK_PUSH(board, pos);
         STACK_PUSH(board, Board_opponent(color));
         STACK_PUSH(board, count);
@@ -332,7 +358,7 @@ int Board_unflip(Board *board)
         return 0;
     }
 
-    int  count = STACK_POP(board);
+    int count = STACK_POP(board);
     int color = STACK_POP(board);
 
     board->disks[STACK_POP(board)] = EMPTY;
@@ -368,6 +394,14 @@ int Board_pattern(const Board *board, int id)
     return board->pattern[id];
 }
 
+///
+/// @fn     add_pattern
+/// @brief  指定パターンの状態を登録する
+/// @param[in,out]  board       評価器
+/// @param[in]      id          パターンID
+/// @param[in]      pos_list    パターンを構成するマスのリスト
+/// @param[in]      num         パターンを構成するマス数
+///
 static void add_pattern(Board *board, int id, const int *pos_list, int num)
 {
     int i, j;
@@ -376,16 +410,22 @@ static void add_pattern(Board *board, int id, const int *pos_list, int num)
     for (i = 0; i < num; i++) {
         for (j = 0; board->pattern_diff[pos_list[i]][j] != 0; j++);
 
+        // pos_list[i]に着手したときidのパターンをn増やす
         board->pattern_id[pos_list[i]][j] = id;
         board->pattern_diff[pos_list[i]][j] = n;
-
         n *= 3;
     }
 }
 
+///
+/// @fn     init_pattern_diff
+/// @brief  盤面パターン差分を初期化する
+/// @param[in,out]  board   評価器
+///
 static void init_pattern_diff(Board *board)
 {
     int i, j;
+    // 各パターンの使用マス
     int pattern_list[][9] = {
         { A4, B4, C4, D4, E4, F4, G4, H4, -1 },
         { A5, B5, C5, D5, E5, F5, G5, H5, -1 },
@@ -438,15 +478,24 @@ static void init_pattern_diff(Board *board)
             board->pattern_diff[i][j] = 0;
         }
     }
+
+    // 各パターンを登録する
     for (i = 0; pattern_list[i][0] >= 0; i++) {
         for (j = 0; pattern_list[i][j] >= 0; j++);
         add_pattern(board, i, pattern_list[i], j);
     }
 }
 
+///
+/// @fn     flip_square_black
+/// @brief  パターン更新：白石から黒石へ反転
+/// @param[in,out]  board   盤面
+/// @param[out]     pos     着手座標
+///
 static void flip_square_black(Board *board, int pos)
 {
     board->disks[pos] = BLACK;
+    // 最大6つの関連パターンについて状態数を更新する
     board->pattern[board->pattern_id[pos][0]] -= board->pattern_diff[pos][0];
     board->pattern[board->pattern_id[pos][1]] -= board->pattern_diff[pos][1];
     board->pattern[board->pattern_id[pos][2]] -= board->pattern_diff[pos][2];
@@ -455,6 +504,12 @@ static void flip_square_black(Board *board, int pos)
     board->pattern[board->pattern_id[pos][5]] -= board->pattern_diff[pos][5];
 }
 
+///
+/// @fn     flip_square_white
+/// @brief  パターン更新：黒石から白石へ反転
+/// @param[in,out]  board   盤面
+/// @param[out]     pos     着手座標
+///
 static void flip_square_white(Board *board, int pos)
 {
     board->disks[pos] = WHITE;
@@ -466,6 +521,12 @@ static void flip_square_white(Board *board, int pos)
     board->pattern[board->pattern_id[pos][5]] += board->pattern_diff[pos][5];
 }
 
+///
+/// @fn     put_square_black
+/// @brief  パターン更新：黒石を着手
+/// @param[in,out]  board   盤面
+/// @param[out]     pos     座標
+///
 static void put_square_black(Board *board, int pos)
 {
     board->disks[pos] = BLACK;
@@ -477,6 +538,12 @@ static void put_square_black(Board *board, int pos)
     board->pattern[board->pattern_id[pos][5]] += board->pattern_diff[pos][5];
 }
 
+///
+/// @fn     put_square_white
+/// @brief  パターン更新：白石を着手
+/// @param[in,out]  board   盤面
+/// @param[out]     pos     座標
+///
 static void put_square_white(Board *board, int pos)
 {
     board->disks[pos] = WHITE;
@@ -488,6 +555,12 @@ static void put_square_white(Board *board, int pos)
     board->pattern[board->pattern_id[pos][5]] += (board->pattern_diff[pos][5] + board->pattern_diff[pos][5]);
 }
 
+///
+/// @fn     remove_square_black
+/// @brief  パターン更新：黒石を戻す
+/// @param[in,out]  board   盤面
+/// @param[out]     pos     座標
+///
 static void remove_square_black(Board *board, int pos)
 {
     board->disks[pos] = EMPTY;
@@ -499,6 +572,12 @@ static void remove_square_black(Board *board, int pos)
     board->pattern[board->pattern_id[pos][5]] -= board->pattern_diff[pos][5];
 }
 
+///
+/// @fn     remove_square_white
+/// @brief  パターン更新：白石を戻す
+/// @param[in,out]  board   盤面
+/// @param[out]     pos     座標
+///
 static void remove_square_white(Board *board, int pos)
 {
     board->disks[pos] = EMPTY;
@@ -510,10 +589,20 @@ static void remove_square_white(Board *board, int pos)
     board->pattern[board->pattern_id[pos][5]] -= (board->pattern_diff[pos][5] + board->pattern_diff[pos][5]);
 }
 
+///
+/// @fn     flip_line_pattern
+/// @brief  パターン更新しつつ一方向へ石を返す
+/// @param[in,out]  board   盤面
+/// @param[in]      color   手番
+/// @param[in]      pos     着手座標
+/// @param[in]      dir     探索方向
+/// @return 返した石数
+///
 static int flip_line_pattern(Board *board, int color, int pos, int dir)
 {
     void (*func_flip)(Board *, int);
 
+    // パターン更新関数を手番で変える
     if (color == BLACK) {
         func_flip = flip_square_black;
     } else {
@@ -529,6 +618,7 @@ static int flip_line_pattern(Board *board, int color, int pos, int dir)
         return 0;
     }
 
+    // ループアンローリング
     cur_pos += dir;
     if (board->disks[cur_pos] == op) {
         cur_pos += dir;
@@ -741,17 +831,25 @@ int Board_unflip_pattern(Board *board)
     return count;
 }
 
+///
+/// @fn     count_flips_line
+/// @brief  一方向へ返せる石数を調べる
+/// @param[in,out]  board   盤面
+/// @param[in]      color   手番
+/// @param[in]      pos     着手座標
+/// @param[in]      dir     探索方向
+/// @return 返せる石数
+///
 static int count_flips_line(const Board *board, int color, int pos, int dir)
 {
     int cur_pos;
     int op = Board_opponent(color);
 
-    // 相手の石を探索
+    // 一方向へ逆色石を探索、端が同色のときカウント
     int count = 0;
     for (cur_pos = (pos + dir); board->disks[cur_pos] == op; cur_pos += dir) {
         count++;
     }
-    // 終端が自色石でないときカウントしない
     if (board->disks[cur_pos] != color) {
         return 0;
     }
@@ -877,6 +975,7 @@ bool Board_can_flip(const Board *board, int disk, int pos)
         return false;
     }
 
+    // 各方向へ着手できるかを確認
     if (count_flips_line(board, disk, pos, UPPER_LEFT) > 0)  return true;
     if (count_flips_line(board, disk, pos, UPPER) > 0)       return true;
     if (count_flips_line(board, disk, pos, UPPER_RIGHT) > 0) return true;
@@ -892,6 +991,7 @@ bool Board_can_flip(const Board *board, int disk, int pos)
 void Board_copy(const Board *src, Board *dst)
 {
     *dst = *src;
+    // スタックポインタ位置の調整
     dst->sp = dst->stack + (src->sp - src->stack);
 }
 
@@ -909,12 +1009,13 @@ void Board_reverse(Board *board)
         }
     }
 
+    // スタック情報を反転する
     for (int *p = board->sp; p > board->stack; ) {
         p--;
-        int count = *p;     // 返した石数
+        int count = *p;             // 返した石数を取得
         p--;
-        *p = Board_opponent(*p);  // 色を反転
-        p -= (count + 1);   // （石数+着手）分さかのぼる
+        *p = Board_opponent(*p);    // 着手色を反転
+        p -= (count + 1);           // （着手+石数）ぶんスタックをさかのぼる
     }
 
     Board_init_pattern(board);
@@ -922,6 +1023,7 @@ void Board_reverse(Board *board)
 
 bool Board_can_play(const Board *board, int color)
 {
+    // 着手可能な座標があるか走査
     for (int y = 0; y < BOARD_SIZE; y++) {
         for (int x = 0; x < BOARD_SIZE; x++) {
             if (Board_can_flip(board, color, Board_pos(x, y))) {

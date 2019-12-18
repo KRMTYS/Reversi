@@ -14,9 +14,13 @@
 #include "evaluator.h"
 #include "learn.h"
 
+///
+/// @struct Setting
+/// @brief  ゲーム設定
+///
 typedef struct {
-    int player_turn;
-    int learn_iter;
+    int player_turn;    ///< プレイヤー手番
+    int learn_iter;     ///< 学習回数
 } Setting;
 
 const char option_str[] = "options\n \
@@ -27,13 +31,28 @@ const char option_str[] = "options\n \
         self-playing learning by specified iterations\n \
     -h  show this help\n";
 
+///
+/// @def    EVAL_FILE
+/// @brief  学習評価値の出力ファイル名
+///
 #define EVAL_FILE "eval.dat"
 
 static bool parse_options(int argc, char* argv[], Setting *setting);
-static void print_board(const Board *board, const int color);
+
 static char *get_stream(char *buffer, const int size, FILE *stream);
+
+static void print_board(const Board *board, const int color);
 static void play(Board *board, Com *com, Setting *setting);
 
+///
+/// @fn     parse_options
+/// @brief  コマンドライン引数からパラメータ設定する
+/// @param[in]  argc    argc (main)
+/// @param[in]  argv    argv (main)
+/// @param[out] setting ゲーム設定
+/// @retval true    パラメータ設定成功
+/// @retval false   設定失敗
+///
 static bool parse_options(int argc, char* argv[], Setting *setting)
 {
     setting->player_turn = BLACK;
@@ -43,18 +62,23 @@ static bool parse_options(int argc, char* argv[], Setting *setting)
     while ((opt = getopt(argc, argv, "bwcl:h")) != -1) {
         switch (opt) {
             case 'b':
+                // -b: プレイヤー手番黒（先攻）
                 setting->player_turn = BLACK;
                 break;
             case 'w':
+                // -w: プレイヤー手番白（後攻）
                 setting->player_turn = WHITE;
                 break;
             case 'c':
+                // -c: COM対COM (debug)
                 setting->player_turn = EMPTY;
                 break;
             case 'l':
+                // -l iteration: 指定回数の学習
                 setting->learn_iter = atoi(optarg);
                 break;
             case 'h':
+                // -h: ヘルプ表示
                 printf(option_str);
                 return false;
                 break;
@@ -66,6 +90,29 @@ static bool parse_options(int argc, char* argv[], Setting *setting)
     }
 
     return true;
+}
+
+///
+/// @fn     get_stream
+/// @brief  ストリームから行単位で文字列を取得する
+/// @param[out] buffer  文字列を格納するバッファ
+/// @param[in]  size    バッファ長
+/// @param[in]  stream  入力ストリーム
+/// @return 取得文字列の先頭ポインタ（取得失敗時NULL）
+///
+static char *get_stream(char *buffer, const int size, FILE *stream)
+{
+    char *result = fgets(buffer, size, stream);
+
+    if (result != NULL) {
+        for (int i = 0; i < size; i++) {
+            if (buffer[i] == '\n') {
+                buffer[i] = '\0';
+            }
+        }
+    }
+
+    return result;
 }
 
 /// 
@@ -91,6 +138,7 @@ static void print_board(const Board *board, const int color)
                     break;
                 default:
                     if (Board_can_flip(board, color, pos)) {
+                        // 有効手の位置を表示する
                         printf("* ");
                     } else {
                         printf("  ");
@@ -104,31 +152,19 @@ static void print_board(const Board *board, const int color)
     printf("X: %d O: %d\n", Board_count_disks(board, BLACK), Board_count_disks(board, WHITE));
 }
 
-static char *get_stream(char *buffer, const int size, FILE *stream)
-{
-    char *result = fgets(buffer, size, stream);
-
-    if (result != NULL) {
-        for (int i = 0; i < size; i++) {
-            if (buffer[i] == '\n') {
-                buffer[i] = '\0';
-            }
-        }
-    }
-
-    return result;
-}
-
 ///
 /// @fn     play
-/// @brief  ゲーム実行
+/// @brief  ゲームを実行する
 /// @param[in]  board   盤面
+/// @param[in]  com     思考ルーチン
+/// @param[in]  setting ゲーム設定
 ///
 static void play(Board *board, Com *com, Setting *setting)
 {
     int  turn = BLACK;
     int  move;
     int  val;
+    // 入力バッファ
     char buffer[32];
 
     Com_set_level(com, 6, 10, 6);
@@ -164,7 +200,7 @@ static void play(Board *board, Com *com, Setting *setting)
         turn = Board_opponent(turn);
     }
 
-    // 勝敗判定
+    // 勝敗の判定処理
     int diff = Board_count_disks(board, BLACK) - Board_count_disks(board, WHITE);
     if (diff > 0) {
         printf("* BLACK wins *\n");

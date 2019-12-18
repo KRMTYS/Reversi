@@ -10,11 +10,16 @@
 #include <string.h>
 #include <limits.h>
 
+///
+/// @def    MAX_VALUE
+/// @brief  パターンの最大評価値
+///
 #define MAX_VALUE (DISK_VALUE * 200)
 
 ///
 /// @struct MoveList
 /// @brief  候補手リスト
+/// @note   双方向リスト
 ///
 typedef struct MoveList_ {
     int pos;                ///< 座標
@@ -56,6 +61,14 @@ static void remove_list(MoveList *movelist);
 static void recover_list(MoveList *movelist);
 static int sort_moves(Com *com, int color, MoveInfo *moveinfo);
 
+///
+/// @fn     initialize
+/// @brief  COMのメンバを初期化する
+/// @param[in,out]  com     COM
+/// @param[in,out]  eval    評価器
+/// @retval true    初期化成功
+/// @retval false   初期化失敗
+///
 static bool initialize(Com *com, Evaluator *eval)
 {
     memset(com, 0, sizeof(Com));
@@ -125,22 +138,26 @@ int Com_get_nextmove(Com *com, Board *board, int color, int *value)
     int val;
 
     if (left <= com->exact_depth) {
+        // 完全読み
         val = Com_end_search(com, color, Board_opponent(color), &next_move, false, -(BOARD_SIZE * BOARD_SIZE), (BOARD_SIZE * BOARD_SIZE), left);
         val *= DISK_VALUE;
     } else if (left <= com->wld_depth) {
+        // 必勝読み
         val = Com_end_search(com, color, Board_opponent(color), &next_move, false, -(BOARD_SIZE * BOARD_SIZE), 1, left);
         val *= DISK_VALUE;
     } else {
+        // 中盤探索
+        // 盤面を反転し黒手番で評価する
         if (((color == WHITE) && (com->mid_depth % 2 == 0)) ||
             ((color == BLACK) && (com->mid_depth % 2 == 1))) {
-                Board_reverse(com->board);
-                col = Board_opponent(color);
-            } else {
-                col = color;
-            }
+            Board_reverse(com->board);
+            col = Board_opponent(color);
+        } else {
+            col = color;
+        }
 
-            // 評価値の上限/下限を十分大きな正負値とする
-            val = Com_mid_search(com, col, Board_opponent(col), &next_move, false, -MAX_VALUE, MAX_VALUE, com->mid_depth);
+        // 探索範囲を -MAX_VALUE - MAX_VALUE とする
+        val = Com_mid_search(com, col, Board_opponent(col), &next_move, false, -MAX_VALUE, MAX_VALUE, com->mid_depth);
     }
 
     if (value) {
@@ -158,38 +175,40 @@ int Com_get_nextmove(Com *com, Board *board, int color, int *value)
 /// @param[in]  opponent    相手の手番色
 /// @param[out] next_move   次手の座標
 /// @param[in]  pass        パス判定
-/// @param[in]  alpha       alphaカット閾値
-/// @param[in]  beta        betaカット閾値
-/// @param[in]  depth       残りの探索深さ
+/// @param[in]  alpha       alpha値（探索下限）
+/// @param[in]  beta        beta値（探索上限）
+/// @param[in]  depth       探索深さ
 /// @return 盤面の評価値
+/// @note   1手ごとにパターンを更新する
 ///
 static int Com_mid_search(Com *com, int turn, int opponent, int *next_move, bool pass, int alpha, int beta, int depth)
 {
-    // 再帰探索の末端
+    // 探索末端（リーフ）: 盤面の評価値を返す
     if (depth == 0) {
         com->node++;
-        // 評価値を返す
         return Evaluator_evaluate(com->evaluator, com->board);
     }
 
     int move;
-    MoveList *p;
     int value;
     int max = alpha;
     bool can_move = false;
+    MoveList *p;
+    // 並び替え用着手情報
     MoveInfo info[BOARD_SIZE * BOARD_SIZE / 2];
     int info_num;
 
     *next_move = NONE;
 
-    // 残り手数が2より多いとき候補手を並び替える
     if (depth > 2) {
+        // 残り手数が2より多いとき候補手を並び替える
         info_num = sort_moves(com, turn, info);
 
         if (info_num > 0) {
             *next_move = info[0].move->pos;
             can_move = true;
         }
+        // 着手できる候補手数ぶん探索する
         for (int i = 0; i < info_num; i++) {
             Board_flip_pattern(com->board, turn, info[i].move->pos);
             remove_list(info[i].move);
@@ -208,8 +227,9 @@ static int Com_mid_search(Com *com, int turn, int opponent, int *next_move, bool
             }
         }
     } else {
-        // 候補手リストを探索
+        // 候補手リストを探索する
         for (p = com->moves->next; p; (p = p->next)) {
+            // 着手できるとき着手する
             if (Board_flip_pattern(com->board, turn, p->pos) > 0) {
                 remove_list(p);
                 if (!can_move) {
@@ -217,8 +237,10 @@ static int Com_mid_search(Com *com, int turn, int opponent, int *next_move, bool
                     can_move = true;
                 }
 
+                // 子ノードを探索
                 value = -Com_mid_search(com, opponent, turn, &move, false, -beta, -max, (depth - 1));
 
+                // 盤面・候補手リストを戻す
                 Board_unflip_pattern(com->board);
                 recover_list(p);
 
@@ -237,12 +259,12 @@ static int Com_mid_search(Com *com, int turn, int opponent, int *next_move, bool
 
     if (!can_move) {
         if (pass) {
-            // 互いに有効手ないときゲーム終了、石数差の評価値を返す
+            // 互いに有効手ないときゲーム終了、評価値として石数差を返す
             *next_move = NONE;
             com->node++;
             max = DISK_VALUE * (Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent));
         } else {
-            // 相手に有効手あるときパス、手番を変更して探索を続ける
+            // 相手に有効手あるときパス、手番を変更して探索続ける
             *next_move = NONE;
             max = -Com_mid_search(com, opponent, turn, &move, true, -beta, -max, (depth - 1));
         }
@@ -259,13 +281,14 @@ static int Com_mid_search(Com *com, int turn, int opponent, int *next_move, bool
 /// @param[in]  opponent    相手の手番色
 /// @param[out] next_move   次手の座標
 /// @param[in]  pass        パス判定
-/// @param[in]  alpha       alphaカット閾値
-/// @param[in]  beta        betaカット閾値
-/// @param[in]  depth       残りの探索深さ
+/// @param[in]  alpha       alpha値（探索下限）
+/// @param[in]  beta        beta値（探索上限）
+/// @param[in]  depth       探索深さ
 /// @return 盤面の評価値
 ///
 static int Com_end_search(Com *com, int turn, int opponent, int* next_move, bool pass, int alpha, int beta, int depth)
 {
+    // リーフ: 盤面評価値を返す
     if (depth == 0) {
         com->node++;
         return Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent);
@@ -279,32 +302,36 @@ static int Com_end_search(Com *com, int turn, int opponent, int* next_move, bool
     MoveInfo info[BOARD_SIZE * BOARD_SIZE / 2];
     int info_num;
 
-    // 残り1マスのとき返せる石数のみ調べる
+    // 残り1マスのとき、返せる石数のみ調べ石数差を計算する
     if (depth == 1) {
         com->node++;
         p = com->moves->next;
-        value = Board_count_flips(com->board, turn, p->pos);
-        max = Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent);
 
+        // 着手前の評価値
+        max  = Board_count_disks(com->board, turn) - Board_count_disks(com->board, opponent);
+
+        // 空きマスに自手着手
+        value = Board_count_flips(com->board, turn, p->pos);
         if (value > 0) {
             *next_move = p->pos;
             return (max + value + value + 1);
         }
 
+        // 空きマスに相手着手
         value = Board_count_flips(com->board, opponent, com->moves->next->pos);
-
         if (value > 0) {
             *next_move = NONE;
             return (max - value - value - 1);
         }
 
+        // 空きマスに着手できない
         *next_move = NONE;
-
         return max;
     }
 
     *next_move = NONE;
 
+    // 残り8手を超える際候補手を並び替える
     if (depth > 8) {
         info_num = sort_moves(com, turn, info);
 
@@ -332,6 +359,7 @@ static int Com_end_search(Com *com, int turn, int opponent, int* next_move, bool
     } else {
         // 候補手リストを探索
         for (p = com->moves->next; p; (p = p->next)) {
+            // パターン更新は行わない
             if (Board_flip(com->board, turn, p->pos) > 0) {
                 remove_list(p);
 
@@ -379,8 +407,15 @@ int Com_count_nodes(const Com *com)
     return com->node;
 }
 
+///
+/// @fn     make_move_list
+/// @brief  候補手リストを作成する
+/// @param[in,out]  com     COM
+///
 static void make_move_list(Com *com)
 {
+    //　候補手リスト
+    // 初期状態で重要度の高い順に並べる
     int list[] = {
         A1, A8, H8, H1,
         D3, D6, E3, E6, C4, C5, F4, F5,
@@ -412,6 +447,11 @@ static void make_move_list(Com *com)
 
 }
 
+///
+/// @fn     remove_list
+/// @brief  候補手リストから1手削除する
+/// @param[in,out]  movelist    候補手リスト
+///
 static void remove_list(MoveList *movelist)
 {
     if (movelist->prev) {
@@ -422,6 +462,12 @@ static void remove_list(MoveList *movelist)
     }
 }
 
+///
+/// @fn     recover_list
+/// @brief  候補手リストに1手戻す
+/// @param[in,out]  movelist    候補手リスト
+/// @note   戻す手はremove_list()で削除されているもの
+///
 static void recover_list(MoveList *movelist)
 {
     if (movelist->prev) {
@@ -432,12 +478,21 @@ static void recover_list(MoveList *movelist)
     }
 }
 
+///
+/// @fn     sort_moves
+/// @brief  候補手を並べ替える
+/// @param[in]  com         COM
+/// @param[in]  color       手番
+/// @param[out] moveinfo    着手情報
+/// @return 着手できる候補手数
+///
 static int sort_moves(Com *com, int color, MoveInfo *moveinfo)
 {
     int info_num = 0;
     MoveList *p;
     MoveInfo tmp_info, *best_info;
 
+    // 候補手から着手できる手を探索し評価値をつける
     for (p = com->moves->next; p; (p = p->next)) {
         if (Board_flip_pattern(com->board, color, p->pos) > 0) {
             moveinfo[info_num].move = p;
@@ -446,11 +501,14 @@ static int sort_moves(Com *com, int color, MoveInfo *moveinfo)
             Board_unflip_pattern(com->board);
         }
     }
+    // 黒手番で評価するため白手番のとき評価値反転する
     if (color == WHITE) {
         for (int i = 0; i < info_num; i++) {
             moveinfo[i].value = -moveinfo[i].value;
         }
     }
+    // 評価値に基づいて候補手を並び替える
+    // 選択ソート
     for (int i = 0; i < info_num; i++) {
         best_info = &moveinfo[i];
 

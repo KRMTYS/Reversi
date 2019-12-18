@@ -17,7 +17,8 @@
 /// @param[in]  evaluator   評価器
 /// @param[in]  com         COM思考ルーチン
 /// @param[in]  iteration   学習回数
-/// @param[in]  file        評価値を出力するファイル名
+/// @param[in]  file        評価値出力ファイル名
+/// @note   モンテカルロ法による強化学習、終局時の石数差を最大化する
 ///
 void learn(Board *board, Evaluator *evaluator, Com *com, const int iteration, const char* file);
 

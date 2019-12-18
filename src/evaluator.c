@@ -19,13 +19,14 @@
 
 ///
 /// @def    MAX_PATTERN_VALUE
-/// @brief  評価値の上限値
+/// @brief  パターン評価値の最大値
 ///
 #define MAX_PATTERN_VALUE (DISK_VALUE * 20)
 
 ///
 /// @def    MIN_FREQUENCY
 /// @brief  評価値の更新頻度
+/// @note   この回数以上出現したパターンを更新する
 ///
 #define MIN_FREQUNECY 10
 
@@ -53,7 +54,7 @@ typedef enum {
 ///
 /// @enum   Pow3
 /// @brief  3の冪乗数
-/// @note   評価パターンの状態数に利用する
+/// @note   各マス数に応じた評価パターンの状態数を示す: （BLACK/WHITE/EMPTY）^（マス数）
 ///
 typedef enum {
     POW3_0  = 1,
@@ -69,7 +70,7 @@ typedef enum {
     POW3_10 = 59049
 } Pow3;
 
-// 各評価パターンの状態数
+// 各評価パターンの状態数: マス数に対応
 static const int pattern_size[] = {
     POW3_8, // hor./vert.4: A4-H4
     POW3_8, // hor./vert.3: A3-H3
@@ -90,11 +91,11 @@ static const int pattern_size[] = {
 /// @brief  評価器
 ///
 struct Evaluator_ {
-    int    *values[NUM_PATTERN];   ///< 各パターンに対する評価値
-    int    *pattern_num[NUM_PATTERN];  ///< パターンの出現回数
+    int    *values[NUM_PATTERN];        ///< 各パターンに対する評価値
+    int    *pattern_num[NUM_PATTERN];   ///< パターンの出現回数
     double *pattern_sum[NUM_PATTERN];   ///< 評価値差分の合計
-    int    mirror_line[POW3_8];    ///< 対称な列パターンを調べるための変数
-    int    mirror_corner[POW3_8];  ///< 対称なコーナーパターンを調べるための変数
+    int    mirror_line[POW3_8];         ///< 対称な列パターンを調べるための変数
+    int    mirror_corner[POW3_8];       ///< 対称なコーナーパターンを調べるための変数
 };
 
 static bool initialize(Evaluator *eval);
@@ -104,6 +105,13 @@ static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double
 
 static void update_pattern(Evaluator *eval, int pattern, int id);
 
+///
+/// @fn     initialize
+/// @brief  評価器メンバを初期化する
+/// @param[in,out]  eval    評価器
+/// @retval true    初期化成功
+/// @retval false   初期化失敗
+///
 static bool initialize(Evaluator *eval)
 {
     memset(eval, 0, sizeof(Evaluator));
@@ -130,6 +138,7 @@ static bool initialize(Evaluator *eval)
         POW3_2, POW3_5, POW3_0, POW3_3, POW3_6, POW3_1, POW3_4, POW3_7
     };
 
+    // 対称パターン調べる変数の初期化
     for (int i = 0; i < POW3_8; i++) {
         mirror_in  = i;
         mirror_out = 0;
@@ -145,6 +154,8 @@ static bool initialize(Evaluator *eval)
             eval->mirror_line[i] = i;
         }
     }
+
+    // 対称コーナーパターン調べる変数の初期化
     for (int i = 0; i < POW3_8; i++) {
         mirror_in  = i;
         mirror_out = 0;
@@ -163,6 +174,11 @@ static bool initialize(Evaluator *eval)
     return true;
 }
 
+///
+/// @fn     finalize
+/// @brief  評価器メンバを破棄する
+/// @param[in,out]  eval    評価器
+///
 static void finalize(Evaluator *eval)
 {
     for (int i = 0; i < NUM_PATTERN; i++) {
@@ -214,6 +230,7 @@ bool Evaluator_load(Evaluator *eval, const char *file)
         return false;
     }
 
+    // 読み込んだ評価値を設定する
     for (int i = 0; i < NUM_PATTERN; i++) {
         if (fread(eval->values[i], sizeof(int), pattern_size[i], fp) < (size_t)pattern_size[i]) {
             fclose(fp);
@@ -249,44 +266,37 @@ int Evaluator_evaluate(Evaluator *eval, const Board *board)
 {
     int result = 0;
 
+    // 各パターンの評価値総和を返す
     result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_ID_HV4_1)];
     result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_ID_HV4_2)];
     result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_ID_HV4_3)];
     result += eval->values[PATTERN_HV4][Board_pattern(board, PATTERN_ID_HV4_4)];
-
     result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_ID_HV3_1)];
     result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_ID_HV3_2)];
     result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_ID_HV3_3)];
     result += eval->values[PATTERN_HV3][Board_pattern(board, PATTERN_ID_HV3_4)];
-
     result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_ID_HV2_1)];
     result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_ID_HV2_2)];
     result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_ID_HV2_3)];
     result += eval->values[PATTERN_HV2][Board_pattern(board, PATTERN_ID_HV2_4)];
-
     result += eval->values[PATTERN_DIAG8][Board_pattern(board, PATTERN_ID_DIAG8_1)];
     result += eval->values[PATTERN_DIAG8][Board_pattern(board, PATTERN_ID_DIAG8_2)];
-
     result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_ID_DIAG7_1)];
     result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_ID_DIAG7_2)];
     result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_ID_DIAG7_3)];
     result += eval->values[PATTERN_DIAG7][Board_pattern(board, PATTERN_ID_DIAG7_4)];
-
     result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_ID_DIAG6_1)];
     result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_ID_DIAG6_2)];
     result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_ID_DIAG6_3)];
     result += eval->values[PATTERN_DIAG6][Board_pattern(board, PATTERN_ID_DIAG6_4)];
-
     result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_ID_DIAG5_1)];
     result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_ID_DIAG5_2)];
     result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_ID_DIAG5_3)];
     result += eval->values[PATTERN_DIAG5][Board_pattern(board, PATTERN_ID_DIAG5_4)];
-
     result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_ID_DIAG4_1)];
     result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_ID_DIAG4_2)];
     result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_ID_DIAG4_3)];
     result += eval->values[PATTERN_DIAG4][Board_pattern(board, PATTERN_ID_DIAG4_4)];
-
     result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_1)];
     result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_2)];
     result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_3)];
@@ -295,22 +305,31 @@ int Evaluator_evaluate(Evaluator *eval, const Board *board)
     result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_6)];
     result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_7)];
     result += eval->values[PATTERN_EDGE8][Board_pattern(board, PATTERN_ID_EDGE8_8)];
-
     result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_ID_CORNER8_1)];
     result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_ID_CORNER8_2)];
     result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_ID_CORNER8_3)];
     result += eval->values[PATTERN_CORNER8][Board_pattern(board, PATTERN_ID_CORNER8_4)];
-
     result += eval->values[PATTERN_PARITY][Board_count_disks(board, EMPTY) & 1];
 
     return result;
 }
 
+///
+/// @fn     add_pattern
+/// @brief  盤面パターンを追加する
+/// @param[in,out]  eval    評価器
+/// @param[in]      pattern パターン
+/// @param[in]      id      パターンID
+/// @param[in]      mirror  対称パターンの存在フラグ
+/// @param[in]      diff    評価値差分
+///
 static void add_pattern(Evaluator* eval, int pattern, int id, int mirror, double diff)
 {
+    // パターンの出現数と評価値差分を加算
     eval->pattern_num[pattern][id]++;
     eval->pattern_sum[pattern][id] += diff;
 
+    // 対称なパターンも同様に操作する
     if (mirror >= 0) {
         eval->pattern_num[pattern][mirror] = eval->pattern_num[pattern][id];
         eval->pattern_sum[pattern][mirror] = eval->pattern_sum[pattern][id];
@@ -322,6 +341,7 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     int index;
     double diff;
 
+    // 局面評価値と評価器出力の差分をとり、更新のベースとする
     diff = (double)(value - Evaluator_evaluate(eval, board));
 
     index = Board_pattern(board, PATTERN_ID_HV4_1);
@@ -332,7 +352,6 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
     index = Board_pattern(board, PATTERN_ID_HV4_4);
     add_pattern(eval, PATTERN_HV4, eval->mirror_line[index], index, diff);
-
     index = Board_pattern(board, PATTERN_ID_HV3_1);
     add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
     index = Board_pattern(board, PATTERN_ID_HV3_2);
@@ -341,7 +360,6 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
     index = Board_pattern(board, PATTERN_ID_HV3_4);
     add_pattern(eval, PATTERN_HV3, eval->mirror_line[index], index, diff);
-
     index = Board_pattern(board, PATTERN_ID_HV2_1);
     add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
     index = Board_pattern(board, PATTERN_ID_HV2_2);
@@ -350,12 +368,10 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
     index = Board_pattern(board, PATTERN_ID_HV2_4);
     add_pattern(eval, PATTERN_HV2, eval->mirror_line[index], index, diff);
-
     index = Board_pattern(board, PATTERN_ID_DIAG8_1);
     add_pattern(eval, PATTERN_DIAG8, eval->mirror_line[index], index, diff);
     index = Board_pattern(board, PATTERN_ID_DIAG8_2);
     add_pattern(eval, PATTERN_DIAG8, eval->mirror_line[index], index, diff);
-
     index = Board_pattern(board, PATTERN_ID_DIAG7_1);
     add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
     index = Board_pattern(board, PATTERN_ID_DIAG7_2);
@@ -364,7 +380,6 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
     index = Board_pattern(board, PATTERN_ID_DIAG7_4);
     add_pattern(eval, PATTERN_DIAG7, eval->mirror_line[index * POW3_1], index, diff);
-
     index = Board_pattern(board, PATTERN_ID_DIAG6_1);
     add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
     index = Board_pattern(board, PATTERN_ID_DIAG6_2);
@@ -373,7 +388,6 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
     index = Board_pattern(board, PATTERN_ID_DIAG6_4);
     add_pattern(eval, PATTERN_DIAG6, eval->mirror_line[index * POW3_2], index, diff);
-
     index = Board_pattern(board, PATTERN_ID_DIAG5_1);
     add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
     index = Board_pattern(board, PATTERN_ID_DIAG5_2);
@@ -382,7 +396,6 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
     index = Board_pattern(board, PATTERN_ID_DIAG5_4);
     add_pattern(eval, PATTERN_DIAG5, eval->mirror_line[index * POW3_3], index, diff);
-
     index = Board_pattern(board, PATTERN_ID_DIAG4_1);
     add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
     index = Board_pattern(board, PATTERN_ID_DIAG4_2);
@@ -391,7 +404,6 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
     index = Board_pattern(board, PATTERN_ID_DIAG4_4);
     add_pattern(eval, PATTERN_DIAG4, eval->mirror_line[index * POW3_4], index, diff);
-
     index = Board_pattern(board, PATTERN_ID_EDGE8_1);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
     index = Board_pattern(board, PATTERN_ID_EDGE8_2);
@@ -408,7 +420,6 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
     index = Board_pattern(board, PATTERN_ID_EDGE8_8);
     add_pattern(eval, PATTERN_EDGE8, index, -1, diff);
-
     index = Board_pattern(board, PATTERN_ID_CORNER8_1);
     add_pattern(eval, PATTERN_CORNER8, eval->mirror_corner[index], index, diff);
     index = Board_pattern(board, PATTERN_ID_CORNER8_2);
@@ -421,13 +432,23 @@ void Evaluator_add(Evaluator *eval, const Board *board, int value)
     add_pattern(eval, PATTERN_PARITY, (Board_count_disks(board, EMPTY) & 1), -1, diff);
 }
 
+///
+/// @fn     update_pattern
+/// @brief  盤面パターンを更新する
+/// @param[in,out]  eval    評価器
+/// @param[in]      pattern パターン
+/// @param[in]      id      パターンID
+///
 static void update_pattern(Evaluator *eval, int pattern, int id)
 {
     int diff;
 
+    // 出現回数超えるパターンを更新
     if (eval->pattern_num[pattern][id] > MIN_FREQUNECY) {
+        // 評価値更新差分: （評価値差分総和）/（パターン出現回数）*（更新率）
         diff = (int)(eval->pattern_sum[pattern][id] / eval->pattern_num[pattern][id] * UPDATE_RATIO);
 
+        // 評価値を -MAX_PATTERN_VALUE <= n <= MAX_PATTERN_VALUE の範囲に制限する
         if ((MAX_PATTERN_VALUE - diff) < eval->values[pattern][id]) {
             eval->values[pattern][id] = MAX_PATTERN_VALUE;
         } else if ((-MAX_PATTERN_VALUE - diff) > eval->values[pattern][id]) {
